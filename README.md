@@ -4,305 +4,211 @@
 
 ### Close the loop. Evolve the work.
 
-**An open-source platform that turns natural-language intent into governed, reusable, and self-evolving AI workflows.**
+**An open-source goal-to-workflow platform for durable, evidence-driven, and governed AI workflows.**
 
-[简体中文](./README.zh-CN.md) · [Vision](#vision) · [Architecture](#architecture) · [Roadmap](#roadmap)
+[简体中文](./README.zh-CN.md) · [Product](./docs/design/core/product-and-architecture.md) · [Architecture](./docs/design/core/system-architecture.md) · [Roadmap](./docs/plans/roadmap.md)
 
 </div>
 
 > [!IMPORTANT]
-> **Project status: Pre-alpha / design stage.** LoopEvo is currently a product and architecture initiative. The runtime, integrations, and user interface described below are planned—not yet available for production use.
+> **Status: Pre-alpha / design stage.** LoopEvo currently contains product, architecture, UI, roadmap, and repository-governance documents. The application, runtime, connectors, and integrations described below are accepted designs or plans—not implemented production features.
 
-## Vision
+## What is LoopEvo?
 
-AI agents are increasingly good at completing a task once. Valuable work, however, rarely ends after one run. It needs to be discovered, scheduled, observed, evaluated, repaired, and improved as the world changes.
+LoopEvo turns a continuing goal expressed in natural language into an inspectable, durable workflow that can run, preserve evidence, measure outcomes, and evolve under explicit controls.
 
-LoopEvo aims to close that gap. A user describes an outcome in natural language; LoopEvo researches the problem, proposes an inspectable workflow, executes it with durable state, measures its results, and turns evidence into governed workflow improvements.
-
-```mermaid
-flowchart LR
-    I["Intent"] --> D["Discover"]
-    D --> P["Plan"]
-    P --> X["Execute"]
-    X --> V["Evaluate"]
-    V --> E["Evolve"]
-    E --> G["Govern"]
-    G --> X
-    V --> O["Outcomes & evidence"]
+```text
+Goal
+→ Research sources and capabilities
+→ Propose an inspectable workflow
+→ Approve and release a version
+→ Execute with durable state
+→ Preserve evidence and outcomes
+→ Evaluate quality, cost, and risk
+→ Propose a minimal change
+→ Replay, review, canary, promote, or roll back
 ```
 
-The goal is not an agent that improvises forever. The goal is a system that converts successful reasoning and execution into **durable, versioned, explainable operations**.
+The product asset is not a chat transcript or an endlessly improvising agent. It is a set of versioned `WorkflowVersion`, `Run`, `Evidence`, `Evaluation`, and `EvolutionProposal` objects.
 
-## What LoopEvo Is
+## Why?
 
-- **Intent-driven:** start with the result you want, not a blank automation canvas.
-- **Workflow-native:** persist useful work as typed, versioned, schedulable artifacts.
-- **Capability-agnostic:** compose Skills, MCP servers, APIs, browser operators, coding agents, and future adapters behind explicit contracts.
-- **Evidence-aware:** retain provenance, traces, costs, evaluation results, and feedback for every run.
-- **Governed by design:** use policies, tests, approvals, canaries, and rollback before adopting changes.
-- **Built to evolve:** improve sources, prompts, tools, routing, and workflow structure from measured outcomes.
-
-LoopEvo is not a promise of unrestricted access to third-party data, an uncontrolled self-modifying production agent, or a replacement for every chat assistant and automation tool.
-
-## Why It Matters
-
-Today, users often have to choose between three incomplete experiences:
+Existing tools usually solve only part of the loop:
 
 | Category | Strength | Common gap |
 | --- | --- | --- |
-| Chat-first agents | Flexible reasoning in the current session | Useful processes often disappear with the conversation |
-| Workflow automation | Reliable repeat execution | Users must manually discover sources and assemble the graph |
-| Agent frameworks | Powerful building blocks for developers | Product-level state, governance, evaluation, and operations remain custom work |
+| Chat agents | Flexible reasoning now | Valuable methods disappear with the session |
+| Automation platforms | Reliable repetition and increasingly AI-assisted workflow creation | Source strategy, provenance, version-pinned runs, and governed evolution remain product-specific |
+| Agent frameworks | Strong developer primitives | Product state, evidence, policy, evaluation, and operations remain custom |
+| Vertical intelligence tools | Ready-made domain data | Sources and methods rarely transfer to another goal |
 
-LoopEvo focuses on the layer between them: **intent-to-workflow discovery plus a durable, evaluable, governed runtime**. It is designed to collaborate with general-purpose agents and existing automation systems, not merely duplicate them.
+LoopEvo focuses on the missing layer: **discover the workflow from the goal, then keep that workflow observable, reproducible, evaluable, and safely improvable.**
 
-## Product Principles
+## Who is it for?
 
-1. **Intent first, graph second.** Users state outcomes; the system explains the workflow it derives.
-2. **Durable by default.** Useful work should be replayable, schedulable, observable, and versioned.
-3. **Evidence over confidence.** Conclusions and changes should be traceable to sources, runs, and evaluations.
-4. **Evolution is governed.** Improvement is proposed and verified before it is adopted.
-5. **Capabilities are modular.** Every tool has declared inputs, outputs, permissions, cost, and failure behavior.
-6. **Cost is a design constraint.** Freshness, coverage, quality, latency, and spend are optimized together.
-7. **Humans stay in control.** High-impact actions cross explicit review and approval boundaries.
-8. **Real vertical slices shape the platform.** Topic intelligence is the first case, not a one-off architecture.
+The Phase 1 beachhead is the product or growth lead responsible for competitive and customer intelligence in a small software or AI product team. They can judge signal quality and obtain provider access, but do not want to begin with APIs, cron jobs, scrapers, agent frameworks, or a blank canvas.
 
-## Core Lifecycle
+Technical founders or engineering leads make deployment, provider, and security decisions. Expansion audiences are:
 
-### 1. Intent
+- researchers and operations teams applying the same loop to research or recurring operations;
+- administrators governing shared workflows, credentials, budgets, and approvals;
+- developers building Connectors, Skills, MCP adapters, evaluators, and delivery channels;
+- platform teams self-hosting the core and integrating identity, secrets, audit, and notifications.
 
-Capture the desired outcome, scope, cadence, constraints, budget, and success criteria through conversation.
+## Product experience
 
-### 2. Discover
+LoopEvo uses **chat as the control plane and durable views as the fact plane**:
 
-Research the domain and identify entities, sources, capabilities, access methods, and risks. The proposed source and tool plan stays visible to the user.
+- **Conversation:** state the goal, review research, grant access, and request changes;
+- **Workflow:** inspect triggers, steps, sources, capabilities, policies, budgets, and the active release;
+- **Runs:** follow progress, waits, retries, failures, costs, and recovery;
+- **Evidence:** trace a conclusion back to raw content, source, time, hash, and derivation;
+- **Evaluations:** compare quality, coverage, freshness, noise, reliability, and cost;
+- **Approvals:** review permissions, external side effects, workflow diffs, canaries, and rollback points.
 
-### 3. Plan
+A visual graph explains the generated workflow; it is not the default starting point.
 
-Compile the accepted proposal into a durable workflow: triggers, typed steps, policies, checkpoints, evaluation criteria, and capability dependencies.
+## Product principles
 
-### 4. Execute
+1. **Intent first, graph second.** Start from an outcome and explain the derived workflow.
+2. **Workflow is the product.** Persist useful work as typed, immutable, schedulable versions.
+3. **Evidence before confidence.** Every important conclusion and change points to sources and runs.
+4. **Deterministic by default.** Code owns auth, collection, checkpoints, deduplication, retries, budgets, approvals, and delivery; agents own judgment.
+5. **Governed evolution.** Agents propose versions; they never silently rewrite production workflows or code.
+6. **Least capability.** Every run receives only its declared data, tools, credentials, and network scope.
+7. **Cost is observable.** Freshness, coverage, quality, latency, and spend are optimized together.
+8. **Real vertical slices shape the platform.** Topic intelligence comes before broad framework abstractions.
 
-Run on demand, on a schedule, or from an event. Preserve state, retries, deduplication, artifacts, and evidence across runs.
+## Architecture direction
 
-### 5. Evaluate
-
-Measure usefulness, accuracy, freshness, coverage, reliability, latency, and cost. Combine automated evaluators with explicit user feedback.
-
-### 6. Evolve
-
-Propose targeted changes based on evidence. Test them against policies, fixtures, and historical runs before approval, canary release, or rollback.
-
-## Architecture
-
-LoopEvo separates conversation and planning from execution, evidence, and change control.
+Pi is the provisional planned agent runtime. Temporal is the provisional planned durable workflow engine. PostgreSQL is the planned product source of truth. Phase 0 spikes must validate these choices before dependencies become implementation facts.
 
 ```mermaid
 flowchart TB
-    subgraph EXP["Experience Plane"]
-        CHAT["Intent & conversation"]
-        UI["Workflow inspector & dashboard"]
-        OUT["Alerts, digests & approvals"]
-    end
-
-    subgraph CTRL["Control Plane"]
-        DISC["Discovery engine"]
-        PLAN["Planner & workflow compiler"]
-        REG["Registry & versioning"]
-        SCHED["Scheduler & trigger manager"]
-        POLICY["Policy & approval engine"]
-    end
-
-    subgraph RUN["Execution Plane"]
-        ORCH["Workflow runtime"]
-        STATE["State, queue, retry & checkpoints"]
-        SANDBOX["Isolated capability runners"]
-    end
-
-    subgraph INTEL["Intelligence Plane"]
-        SYNTH["Enrichment & synthesis"]
-        EVAL["Evaluators"]
-        EVO["Evolution proposals"]
-    end
-
-    subgraph CAP["Capability Layer"]
-        SKILL["Skills"]
-        MCP["MCP servers"]
-        API["APIs & connectors"]
-        BROWSER["Browser operators"]
-        CODER["Coding agents"]
-    end
-
-    subgraph DATA["Data & Evidence Plane"]
-        STORE["Artifacts, lineage & evidence"]
-        OBS["Metrics, traces & cost"]
-        SECRET["Secret references"]
-    end
-
-    CHAT --> DISC --> PLAN --> REG --> SCHED --> ORCH
-    UI <--> REG
-    OUT <--> POLICY
-    POLICY --> ORCH
-    ORCH <--> STATE
-    ORCH --> SANDBOX
-    SANDBOX --> SKILL
-    SANDBOX --> MCP
-    SANDBOX --> API
-    SANDBOX --> BROWSER
-    SANDBOX --> CODER
-    ORCH --> SYNTH --> EVAL --> EVO --> POLICY
-    EVO --> REG
-    ORCH --> STORE
-    ORCH --> OBS
-    SANDBOX --> SECRET
-    STORE --> UI
+    UX["Web / API / Delivery"] --> CTRL["Intent, Compiler, Registry, Policy"]
+    CTRL --> TEMP["Temporal Workflow Interpreter"]
+    TEMP --> PI["Pi Agent Worker"]
+    TEMP --> CAP["Connector / Browser / Delivery Workers"]
+    TEMP --> CODE["Sandboxed Coding Worker"]
+    DATA["PostgreSQL / Object Storage / Outbox"]
+    CAP --> DATA
+    CODE --> DATA
+    DATA --> EVAL["Evidence / Evaluation / Evolution"]
+    EVAL --> CTRL
+    TEMP --> OBS["OpenTelemetry / Audit / Cost"]
+    PI --> OBS
+    CAP --> OBS
 ```
 
-### Conceptual Components
+### Key boundaries
 
-| Component | Responsibility |
+- A Pi Agent Step is one reasoning Activity that returns `tool_request` or `final`; each external tool runs as a separate Capability Activity.
+- Temporal owns recovery history; PostgreSQL owns queryable product state, versions, collection checkpoints, evidence, evaluations, and approvals.
+- External I/O runs in isolated Activity Workers behind versioned capability contracts; Temporal Workflow code remains deterministic.
+- Workflow, capability, prompt, model, connector, and policy versions are pinned for every run.
+- Event, webhook, or reliable incremental checkpoint collection is preferred over fixed polling.
+- Coding agents create reviewed candidates in a sandbox; running workflows never hot-load generated code.
+- The MVP does not run two Agent runtimes or two workflow engines at once, and does not add Kafka, Kubernetes, a multi-agent supervisor, or a full drag-and-drop canvas.
+
+Planned core technologies:
+
+| Concern | Direction |
 | --- | --- |
-| Intent & discovery | Turn a goal into a researched proposal of sources, capabilities, constraints, and success criteria |
-| Planner & compiler | Produce a typed workflow graph with triggers, policies, dependencies, and evaluation hooks |
-| Registry & versioning | Store workflow definitions, capability contracts, provenance, releases, and rollback targets |
-| Scheduler & triggers | Start recurring, event-driven, and manual runs with explicit cadence and budget policies |
-| Workflow runtime | Execute steps, preserve state, isolate failures, retry safely, and emit evidence |
-| Capability layer | Adapt Skills, MCP, APIs, browsers, and generated modules through common contracts |
-| Evidence & observability | Retain artifacts, lineage, metrics, traces, cost, and access records |
-| Evaluation & evolution | Score outcomes and draft testable, versioned improvement proposals |
-| Governance | Enforce permissions, privacy, budgets, approvals, release controls, and rollback |
+| Language and UI | TypeScript, React / Next.js, Tailwind CSS, Radix primitives |
+| Agent runtime | `@earendil-works/pi-ai` and `@earendil-works/pi-agent-core` behind LoopEvo adapters |
+| Durable execution | Temporal TypeScript SDK |
+| Product data | PostgreSQL, Postgres Outbox, S3-compatible object storage |
+| Capabilities | Native connectors, Playwright, MCP TypeScript SDK, Skills, webhooks |
+| Observability | OpenTelemetry with a replaceable analysis backend |
 
-Technology choices for the runtime, data stores, queues, and deployment topology are intentionally open until implementation research validates them.
+See the [system architecture](./docs/design/core/system-architecture.md) for contracts, data flow, Pi package decisions, security, testing, and deployment boundaries.
 
-## The Durable Workflow Artifact
+## Flagship use case: topic intelligence
 
-A LoopEvo workflow is intended to be a versioned artifact—not an opaque transcript. Its conceptual contract includes:
+A user may ask:
 
-- intent, scope, and measurable success criteria;
-- manual, scheduled, or event-driven triggers;
-- a typed execution graph and capability dependencies;
-- source-selection rationale and access constraints;
-- state, checkpoints, deduplication, retry, and idempotency semantics;
-- budget, privacy, safety, and approval policies;
-- an evaluation suite and acceptance thresholds;
-- provenance, version history, release state, and rollback target.
+> Track medo.dev, competing AI website builders, and relevant community discussion. Surface launches, design trends, feature requests, and complaints. Send a cited daily digest and alert me when a high-value signal appears.
 
-The concrete schema will be proposed and versioned during the foundation phase.
+The planned workflow will:
 
-## Capabilities and Extensibility
+1. discover brands, competitors, category terms, communities, accounts, and authoritative sites;
+2. explain the value, access method, coverage, cost, and authorization limits of each source;
+3. separate historical backfill from incremental collection;
+4. use events, checkpoints, watermarks, fingerprints, and idempotency to avoid waste and duplication;
+5. normalize, cluster, rank, analyze, and summarize content with citations;
+6. provide alerts, digests, searchable evidence, run traces, and coverage gaps;
+7. propose source, cadence, filter, and analysis improvements from feedback and measured outcomes.
 
-LoopEvo plans to treat capabilities as interchangeable modules with explicit manifests. A capability should declare what it can do, the data and permissions it needs, expected cost and latency, its failure modes, and how it can be tested.
+X is a required Alpha source, integrated through an official API, user authorization, or a contractually valid provider. RSS and targeted public web pages provide the low-cost base. Reddit and other networks follow real value, licensing, and cost—not a promise of universal coverage.
 
-Planned capability types include:
+Company-specific delivery, such as a Ruliu adapter, stays outside the open-source core and implements the same delivery contract.
 
-- **Skills** for packaged domain knowledge and repeatable procedures;
-- **MCP servers** for standardized tool and context access;
-- **APIs and connectors** for authorized structured integrations;
-- **browser operators** for permitted web interactions where APIs are insufficient;
-- **coding agents** for proposing or implementing missing modules.
+## How LoopEvo is different
 
-A coding agent is not a bypass around engineering controls. Generated modules should be reviewed, tested, versioned, sandboxed, observed, and released through the same policies as human-written code.
+| Reference | Primary asset | What LoopEvo adds |
+| --- | --- | --- |
+| OpenClaw / Hermes | A persistent, learning agent | Versioned workflows, source strategy, evidence, evaluation, and controlled promotion |
+| Codex / Claude Code | A verifiable software task or reusable coding workflow | Long-lived domain workflows, provider cursors, durable runs, quality and cost gates |
+| n8n / Dify | AI-assisted automation or AI applications | Versioned source strategy, raw evidence, fixed-version runs, and a governed release chain |
+| Gumloop | Conversational automation with evaluations and reflections | Portable self-hosted contracts, immutable releases, provenance, replay, canary, and rollback |
 
-## Governed Evolution
-
-“Self-evolving” does not mean silently rewriting production workflows.
-
-```mermaid
-flowchart LR
-    R["Run evidence"] --> F["Find a measurable gap"]
-    F --> C["Draft a versioned change"]
-    C --> T["Tests, replay & policy checks"]
-    T --> D{"Risk decision"}
-    D -->|Reject| F
-    D -->|Review| H["Human approval"]
-    D -->|Low risk| K["Canary release"]
-    H --> K
-    K --> M["Measure"]
-    M -->|Improved| P["Promote"]
-    M -->|Regressed| B["Rollback"]
-```
-
-Evolution may target source coverage, cadence, filters, prompts, models, routing, workflow structure, or capability code. Every adopted change should have evidence, an accountable version, and a recovery path.
-
-## Flagship Use Case: Topic Intelligence
-
-Topic intelligence is the first planned end-to-end case for validating the platform.
-
-A user might ask:
-
-> Monitor AI website builders, including MeDo and relevant competitors. Track product updates, feature requests, complaints, community discussions, and emerging design trends. Alert me when something matters and summarize what we should learn each day.
-
-LoopEvo should then:
-
-1. research the space and propose entities, competitors, keywords, communities, and sources;
-2. explain why each source matters and how it can be accessed;
-3. persist the approved collection and analysis workflow;
-4. collect incrementally with checkpoints and deduplication;
-5. enrich, cluster, rank, and summarize evidence;
-6. deliver timely alerts, scheduled digests, and a searchable full-fidelity view;
-7. learn from misses and feedback to improve coverage, cadence, filters, and synthesis.
-
-Potential sources include X, Reddit, Facebook, Instagram, Bluesky, RSS feeds, public websites, and licensed data providers. Actual coverage depends on official API availability, account authorization, contracts, platform terms, privacy requirements, and regional law. LoopEvo connectors should expose those constraints instead of pretending they do not exist.
-
-The same loop can later support research watchlists, learning plans, market intelligence, technical change tracking, and repeatable data-analysis workflows.
-
-## How LoopEvo Is Different
-
-LoopEvo is designed around the lifecycle **after a useful agent run**:
-
-- turn the successful path into a durable workflow;
-- preserve source and decision provenance;
-- run it repeatedly with state and budgets;
-- measure whether the outcome remains useful;
-- improve it through controlled, reversible versions.
-
-General-purpose agents can remain the reasoning and execution engines inside LoopEvo. Existing automation tools can remain downstream executors. LoopEvo's focus is the product and control layer that discovers, governs, evaluates, and evolves the complete workflow.
+In one line: **LoopEvo makes the workflow—not the agent—the durable unit of learning.**
 
 ## Roadmap
 
-The roadmap is outcome-oriented and will evolve through public design work.
+The roadmap advances through evidence-based gates rather than date promises:
 
-| Phase | Outcome | Status |
-| --- | --- | --- |
-| 0. Foundation | Product contract, architecture decisions, workflow schema, security model, and contribution process | **In progress** |
-| 1. Topic intelligence slice | Natural-language brief → source plan → incremental collection → evidence-backed digest | Planned |
-| 2. Intent-to-workflow | Reusable planner, capability registry, workflow compiler, scheduler, and run inspector | Planned |
-| 3. Evaluation & evolution | Evaluation suites, feedback loops, version proposals, approval, canary, and rollback | Planned |
-| 4. Ecosystem | Connector SDK, reusable workflow packs, deployment profiles, and community registry | Planned |
+1. **Foundation:** a local goal → version → durable run → evidence walking skeleton;
+2. **Topic Intelligence Alpha:** RSS, targeted web, one authorized X provider, incremental collection, cited digests, and webhook delivery;
+3. **Reusable Workflow Core:** stable schemas, connector SDK, triggers, policy, dry run, replay, and self-host operations;
+4. **Governed Evolution:** datasets, diffs, offline evaluation, approval, canary, promotion, and rollback;
+5. **Sandboxed Coding Extension:** reviewed Connector and Skill candidates from replaceable coding agents;
+6. **Open Ecosystem & Teams:** trusted distribution, team governance, and portable managed/self-hosted operation.
 
-Near-term work will prioritize a narrow, reliable vertical slice over broad but shallow integrations.
+See the [full roadmap](./docs/plans/roadmap.md) for scope, exit criteria, metrics, and deferred work.
 
-## Project Status
+## What is deliberately deferred
 
-LoopEvo is currently at **pre-alpha / design stage**. This repository establishes the product contract and architecture direction so implementation can proceed against clear boundaries.
+- unrestricted scraping or universal social-network coverage;
+- a general desktop/voice assistant and dozens of chat channels;
+- a complete visual workflow editor, agent teams, and a public marketplace;
+- unreviewed self-modification of workflows, skills, connectors, or production code;
+- Kafka, Redis, Elasticsearch, Kubernetes, or a separate vector database without measured need.
 
-There is no runnable release yet. Watch the repository for architecture decisions, milestones, and the first vertical-slice implementation.
+## Project status
+
+Available now:
+
+- accepted product, architecture, UI, reference, security, and roadmap documents;
+- English and Chinese project entry points;
+- Apache License 2.0 and repository knowledge-base governance.
+
+Not implemented yet:
+
+- application, API, CLI, identity, database schema, or deployment;
+- WorkflowSpec compiler, Temporal workflows, Pi adapter, or workers;
+- production connectors, evidence pipeline, evaluation, notifications, or evolution runtime.
+
+## Documentation
+
+- [Product definition and core model](./docs/design/core/product-and-architecture.md)
+- [System architecture and technology baseline](./docs/design/core/system-architecture.md)
+- [Reference projects and differentiation](./docs/design/core/reference-landscape.md)
+- [UI design system](./docs/design/core/ui-design-system.md)
+- [Product and engineering roadmap](./docs/plans/roadmap.md)
+- [Security and data governance](./docs/reference/security-and-data-governance.md)
+- [Repository context](./docs/reference/repository-context.md)
 
 ## Contributing
 
-LoopEvo is being designed in the open. Early contributions are especially useful around:
+LoopEvo is early enough for core decisions to matter. Contributions are welcome in product critique, architecture, workflow semantics, connectors, evaluation, security, and developer experience.
 
-- workflow and capability contracts;
-- evaluation and safe-evolution methods;
-- source connectors and incremental collection strategies;
-- security, sandboxing, privacy, and governance;
-- topic-intelligence datasets and end-to-end scenarios;
-- product feedback from real recurring workflows.
-
-Open an issue to share a use case or design proposal. As the implementation foundation lands, repository-specific development and review guidelines will be added before accepting production code changes.
+Before proposing code, read [CLAUDE.md](./CLAUDE.md), [docs/CLAUDE.md](./docs/CLAUDE.md), and the relevant design source. Do not describe planned behavior as implemented, and do not add a platform integration without verifying its authorization, terms, cost, and deletion model.
 
 ## Name
 
-**LoopEvo** combines **Loop** and **Evolution**: close the execution-feedback loop, then evolve the workflow from evidence.
+**Loop** represents the continuous cycle from intent to evidence and improvement. **Evo** represents governed evolution based on measured outcomes.
 
 ## License
 
-Licensed under the [Apache License 2.0](./LICENSE).
-
----
-
-<div align="center">
-
-**LoopEvo — turn intent into a system that keeps learning how to work better.**
-
-</div>
+[Apache License 2.0](./LICENSE)

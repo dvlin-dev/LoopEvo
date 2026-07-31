@@ -4,7 +4,7 @@
 
 ## 项目定位
 
-LoopEvo 是一个开源平台，目标是将自然语言意图转化为可治理、可复用、自进化的 AI 工作流。
+LoopEvo 是一个开源的目标到工作流平台，目标是将自然语言意图转化为可治理、可复用、可验证并可安全进化的长期 AI 工作流。
 
 项目关注的不是一次 Agent 会话能否完成任务，而是如何把有效过程沉淀为可调度、可观测、可评估、可版本化并可安全改进的持久工作流。主题情报与信息获取是首个规划中的端到端场景，但平台边界不限于舆情监控。
 
@@ -12,7 +12,7 @@ LoopEvo 是一个开源平台，目标是将自然语言意图转化为可治理
 
 项目当前处于 **Pre-alpha / 设计阶段**：
 
-- 仓库已经形成产品定义、架构方向和知识库治理基线；
+- 仓库已经形成产品定义、系统架构、UI 体系、参考调研、路线图和知识库治理基线；
 - 尚无可运行的应用、工作流运行时或生产连接器；
 - README 和设计文档中的系统能力属于已采纳方向或规划能力，除非代码与验证证据明确证明，否则不得描述为已经实现。
 
@@ -37,7 +37,7 @@ LoopEvo 是一个开源平台，目标是将自然语言意图转化为可治理
 - 浏览器操作、外部消息、账号变更和其他不可逆动作必须遵循最小权限，并取得与风险相称的明确授权。
 - Coding Agent 生成的模块必须接受与人工代码相同的评审、测试、沙箱、发布和回滚控制。
 - “自进化”只能产生可审计、可版本化、可验证、可回滚的变更，不能静默改写生产工作流。
-- 技术栈尚未确定时，不根据偏好虚构框架、命令、接口或部署事实。
+- 已采纳技术方向不等于已经落地；不得在代码、依赖和验证入口出现前虚构命令、接口、部署或运行事实。
 
 完整安全规则见 `docs/reference/security-and-data-governance.md`。
 
@@ -48,8 +48,12 @@ LoopEvo 是一个开源平台，目标是将自然语言意图转化为可治理
 - 协作与交付：`docs/reference/collaboration-and-delivery.md`
 - 测试与验证：`docs/reference/testing-and-validation.md`
 - 安全与数据治理：`docs/reference/security-and-data-governance.md`
-- 产品与核心架构：`docs/design/core/product-and-architecture.md`
-- 执行中设计与计划：`docs/plans/*`
+- 产品定义与核心模型：`docs/design/core/product-and-architecture.md`
+- 系统架构与技术基线：`docs/design/core/system-architecture.md`
+- 参考项目与差异化：`docs/design/core/reference-landscape.md`
+- UI 设计体系：`docs/design/core/ui-design-system.md`
+- 当前路线图：`docs/plans/roadmap.md`
+- 其他执行中设计与计划：`docs/plans/*`
 - 已落地功能事实：`docs/design/features/*`
 - HTML 与静态原型：`docs/prototype/*`
 

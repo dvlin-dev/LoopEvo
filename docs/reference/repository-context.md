@@ -8,7 +8,7 @@ status: active
 
 ## 项目定位
 
-LoopEvo 是一个开源 AI 工作流平台，目标是把自然语言意图转化为可治理、可复用、自进化的持久工作流。
+LoopEvo 是一个开源的目标到工作流平台，目标是把自然语言意图转化为可治理、可复用、可验证并可安全进化的持久工作流。
 
 平台计划通过调研、规划、执行、评估、进化和治理形成闭环，并以 Skills、MCP Server、API、浏览器操作器和 Coding Agent 等能力作为可组合模块。主题情报与信息获取是第一个规划中的端到端场景，但不是平台的最终边界。
 
@@ -22,7 +22,8 @@ LoopEvo 是一个开源 AI 工作流平台，目标是把自然语言意图转�
 - 完整中文首页 `README.zh-CN.md`；
 - Apache License 2.0；
 - 仓库级与 docs 级协作入口；
-- 已采纳的产品与核心架构设计；
+- 已采纳的产品定义、架构边界、Pi / Temporal 候选技术调研、参考项目和 UI 设计；
+- 带阶段范围与退出条件的产品和工程路线图；
 - 协作、验证、安全和数据治理基线。
 
 仓库当前尚未具备：
@@ -45,34 +46,47 @@ LoopEvo 是一个开源 AI 工作流平台，目标是把自然语言意图转�
 - “自进化”是基于证据提出受治理的版本变更，不是无约束自修改。
 - 高风险变更需要测试、策略、审批、灰度和回滚。
 - 数据访问必须满足授权、平台条款、隐私和地区法律要求。
+- 无论选择哪种 Agent Runtime，它都只承担推理与工具循环，不承担产品工作流、权限和持久状态。
+- Pi 与 Temporal 是需要由 Phase 0 Spike 验证的暂定技术选择；PostgreSQL 是计划中的产品事实源，S3 兼容对象存储用于大体积原始证据。
+- 系统采用 TypeScript 模块化单体与独立 Worker 起步，不提前引入双 Agent Runtime、Kafka、Kubernetes 或完整流程画布。
 
-详细内容见 `docs/design/core/product-and-architecture.md`。
+详细内容见 `docs/design/core/product-and-architecture.md` 与 `docs/design/core/system-architecture.md`。
 
-## 尚未确定的技术决策
+## 暂定技术基线
 
-以下内容必须经过实现阶段调研与设计后才能成为事实：
+以下选择属于暂定目标技术基线，不代表仓库已有对应代码；Pi 与 Temporal 通过路线图的 Spike 门槛后才升级为实现事实：
 
-- 主要编程语言与应用框架；
-- 工作流定义格式和执行语义；
-- 单体、模块化单体或分布式部署形态；
-- 数据库、队列、缓存、对象存储和搜索技术；
-- 多租户、身份、权限与秘密管理方案；
-- Web、桌面、CLI 或组合式产品入口；
-- 连接器 SDK、插件打包和版本兼容协议；
-- 模型供应商、评估框架和自动审批阈值；
-- CI、发布、可观测性和运维体系。
+- TypeScript、React / Next.js Web 与独立 Worker；
+- 通过 Adapter 隔离的 `@earendil-works/pi-ai` 和 `@earendil-works/pi-agent-core`；
+- Temporal TypeScript SDK 解释固定的 WorkflowVersion；
+- PostgreSQL、Postgres Outbox 和 S3 兼容对象存储；
+- Playwright、MCP TypeScript SDK、Skills 和 Native Connector；
+- OpenTelemetry 作为可观测协议。
 
-在正式设计被采纳前，不在稳定文档中预设这些选择。
+## 仍需 Foundation 固化的决策
+
+- 依赖的精确版本、workspace 工具、包名和代码目录；
+- WorkflowSpec JSON Schema、状态机、数据库表和迁移策略；
+- Identity、租户隔离、Policy、Secret Provider 和生产部署；
+- X 数据 Provider、连接器字段、许可、费用和删除模型；
+- UI 组件实现、流式传输和可观测分析后端；
+- 评估数据集、模型供应商、数值 SLO 和自动审批阈值。
+
+这些决策必须经过 Spike、设计、实施和验证后才能更新为实现事实。
 
 ## 关键路径
 
 - 仓库协作入口：`CLAUDE.md`
 - 知识库治理：`docs/CLAUDE.md`
-- 产品与核心架构：`docs/design/core/product-and-architecture.md`
+- 产品定义与核心模型：`docs/design/core/product-and-architecture.md`
+- 系统架构与技术基线：`docs/design/core/system-architecture.md`
+- 参考项目与差异化：`docs/design/core/reference-landscape.md`
+- UI 设计体系：`docs/design/core/ui-design-system.md`
+- 当前路线图：`docs/plans/roadmap.md`
 - 协作与交付：`docs/reference/collaboration-and-delivery.md`
 - 测试与验证：`docs/reference/testing-and-validation.md`
 - 安全与数据治理：`docs/reference/security-and-data-governance.md`
-- 执行中设计与计划：`docs/plans/*`
+- 其他执行中设计与计划：`docs/plans/*`
 
 ## 维护要求
 
