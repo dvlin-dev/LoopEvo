@@ -27,35 +27,35 @@
 - [x] Capture the product definition, boundaries, principles, architecture, safe-evolution model, flagship use case, and deferred decisions.
 - [x] Define acceptance criteria that prohibit presenting planned capabilities as implemented.
 - [x] Review both documents for internal consistency and clean Markdown formatting.
-- [ ] Commit the design and plan with message `docs: define repository foundation`.
+- [x] Commit the design and plan with message `docs: define repository foundation`.
 
 ### Task 2: Create the Canonical English Project README
 
 **Files:**
 - Create: `README.md`
 
-- [ ] Add the LoopEvo name, tagline, one-sentence definition, language link, and pre-alpha notice.
-- [ ] Explain the problem, product boundary, core loop, and product principles.
-- [ ] Add valid Mermaid diagrams for the lifecycle and conceptual architecture.
-- [ ] Document the capability model, durable workflow artifact, governance, and safe evolution.
-- [ ] Present topic intelligence as the flagship vertical slice with platform-access caveats.
-- [ ] Add differentiation, roadmap, contribution guidance, and license reference.
+- [x] Add the LoopEvo name, tagline, one-sentence definition, language link, and pre-alpha notice.
+- [x] Explain the problem, product boundary, core loop, and product principles.
+- [x] Add valid Mermaid diagrams for the lifecycle and conceptual architecture.
+- [x] Document the capability model, durable workflow artifact, governance, and safe evolution.
+- [x] Present topic intelligence as the flagship vertical slice with platform-access caveats.
+- [x] Add differentiation, roadmap, contribution guidance, and license reference.
 
 ### Task 3: Create the Simplified Chinese Mirror
 
 **Files:**
 - Create: `README.zh-CN.md`
 
-- [ ] Mirror every substantive section and diagram from `README.md`.
-- [ ] Preserve technical meaning instead of translating mechanically.
-- [ ] Link back to the canonical English README.
+- [x] Mirror every substantive section and diagram from `README.md`.
+- [x] Preserve technical meaning instead of translating mechanically.
+- [x] Link back to the canonical English README.
 
 ### Task 4: Add the Project License
 
 **Files:**
 - Create: `LICENSE`
 
-- [ ] Add the complete Apache License 2.0 text.
+- [x] Add the complete Apache License 2.0 text.
 - [ ] Verify GitHub can identify the license after push.
 
 ### Task 5: Validate and Commit Repository Content
@@ -67,9 +67,9 @@
 - Validate: `docs/superpowers/specs/2026-08-01-repository-foundation-design.md`
 - Validate: `docs/superpowers/plans/2026-08-01-repository-foundation.md`
 
-- [ ] Run `git diff --check` and resolve whitespace errors.
-- [ ] Search for placeholders or claims that imply unimplemented functionality.
-- [ ] Inspect the full staged diff and confirm no unrelated files are included.
+- [x] Run `git diff --check` and resolve whitespace errors.
+- [x] Search for placeholders or claims that imply unimplemented functionality.
+- [x] Inspect the full staged diff and confirm no unrelated files are included.
 - [ ] Commit with message `docs: establish LoopEvo project foundation`.
 
 ### Task 6: Publish and Configure GitHub
