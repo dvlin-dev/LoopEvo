@@ -56,7 +56,7 @@
 - Create: `LICENSE`
 
 - [x] Add the complete Apache License 2.0 text.
-- [ ] Verify GitHub can identify the license after push.
+- [x] Verify GitHub can identify the license after push.
 
 ### Task 5: Validate and Commit Repository Content
 
@@ -70,15 +70,15 @@
 - [x] Run `git diff --check` and resolve whitespace errors.
 - [x] Search for placeholders or claims that imply unimplemented functionality.
 - [x] Inspect the full staged diff and confirm no unrelated files are included.
-- [ ] Commit with message `docs: establish LoopEvo project foundation`.
+- [x] Commit with message `docs: establish LoopEvo project foundation`.
 
 ### Task 6: Publish and Configure GitHub
 
 **Files:**
 - Push the two documentation commits to `origin/main`.
 
-- [ ] Set the repository description to the approved one-sentence definition.
-- [ ] Add focused GitHub topics for agentic workflows, orchestration, evolution, capabilities, and topic intelligence.
-- [ ] Push `main` with upstream tracking.
-- [ ] Read back the remote README, default branch, description, topics, and detected license.
-- [ ] Confirm the local working tree is clean and record the final commit identifiers.
+- [x] Set the repository description to the approved one-sentence definition.
+- [x] Add focused GitHub topics for agentic workflows, orchestration, evolution, capabilities, and topic intelligence.
+- [x] Push `main` with upstream tracking.
+- [x] Read back the remote README, default branch, description, topics, and detected license.
+- [x] Confirm the local working tree is clean and record the final commit identifiers.
