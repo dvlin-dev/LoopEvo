@@ -8,42 +8,54 @@ status: active
 
 ## 文档定位
 
-本文定义 LoopEvo 官网和 Web 应用的视觉、信息架构与交互基线。参考对象仅为 [Wegic 官网](https://wegic.ai/)及其项目工作区的视觉语言和交互层级，**与 Wegic 的网站生成功能无关**。
+本文定义 LoopEvo 官网、Web 和桌面端的视觉、信息架构与交互基线。参考对象仅为 [Wegic 官网](https://wegic.ai/)及其工作区的视觉语言和交互层级，**与 Wegic 的建站功能无关**。
 
-调研于 2026-08-01 在桌面和 390 × 844 移动视口实机完成，覆盖官网、创建页、项目列表、聊天工作区、项目设置和 Memory 设置。研究截图仅作内部证据，不进入仓库，也不复制 Wegic 的 Logo、吉祥物、插画、文案、业务流程或其他专有资产。
+调研于 2026-08-01 覆盖 Wegic 官网、创建页、项目列表、聊天工作区、项目设置和 Memory 设置。研究只用于提炼原则，不复制其 Logo、吉祥物、插画、文案、业务流程或专有资产。
 
-## 设计目标
+## 体验目标
 
-LoopEvo 的界面应让用户始终回答四个问题：
+LoopEvo 面向不熟悉 Agent、API 和流程编排的普通用户。界面始终帮助用户回答：
 
-1. 系统理解的目标是什么；
-2. 当前准备做什么、正在做什么；
-3. 结论来自哪里，覆盖和不确定性如何；
-4. 哪些变更或动作正在等待我的决定。
+1. Agent 理解的目标是什么；
+2. 它现在做什么，下一次什么时候做；
+3. 结果是什么，来自哪里；
+4. 哪些动作超出了我已授予的边界。
 
-设计气质是：**冷静、清晰、可信、轻量但不玩具化。** 对话是入口，状态、证据、版本和审批是主角。
+设计气质是：**冷静、轻量、可信、自动但不神秘。** 对话是入口，结果是主角；内部工作流、Run Trace 和 Evaluation 只在需要解释或排错时展开。
 
 ## 从 Wegic 提取的原则
 
 ### 借鉴
 
-- 近白画布、强黑色段落和大量留白形成清晰节奏；
-- 首页只保留一个主意图输入和少量示例，不先展示复杂设置；
-- 工作区以对话为中心，计划、任务状态和结果卡片直接嵌入时间线；
-- 导航弱化，项目身份、当前状态和主动作保持可见；
-- 设置采用左侧分类、右侧内容的大面板，项目级与账号级边界清楚；
-- 移动端保持单列对话和底部输入，不缩小成不可用的桌面画布。
+- 近白画布、强黑段落和大留白形成节奏；
+- 首页只有一个主意图输入和少量示例，不先展示复杂设置；
+- 工作区以对话为中心，计划、状态和结果以内联卡片出现；
+- 导航弱化，当前 Agent、运行位置、状态和主动作保持可见；
+- 设置使用左侧分类、右侧内容的大面板；
+- 移动端保持单列对话和底部输入，不缩小桌面画布。
 
 ### 不复制
 
-- 不使用 Wegic 的品牌色值、Logo、吉祥物、插画、卡片内容或营销文案；
-- 不复制其建站业务的信息结构；
-- 不用装饰性动画掩盖运行状态；
-- 不把所有能力藏在对话中，Workflow、Run、Evidence 和 Approval 必须有稳定入口。
+- 不使用 Wegic 的品牌色、Logo、吉祥物、插画、营销文案和业务结构；
+- 不复制其建站功能或页面内容；
+- 不用装饰动画掩盖运行、费用和权限状态；
+- 不把所有事实藏在聊天里，Loop、Activity、Result 和 Connection 必须可再次找到。
 
-## 目标态产品信息架构
+## 用户概念
 
-以下结构描述完整产品目标，不代表 Phase 0 / 1 全部实现。
+界面只把以下概念作为一等入口：
+
+| 概念 | 用户文案 | 展示内容 |
+| --- | --- | --- |
+| Agent | “帮我长期完成目标的 AI” | 目标、状态、下一动作、Memory 摘要 |
+| Loop | “会重复或持续运行的任务” | 做什么、触发方式、下次运行、运行位置 |
+| Activity | “Agent 做过什么” | 当前进度、历史、费用、失败与恢复 |
+| Result | “Agent 交付的东西” | 摘要、文件、来源、覆盖和可用动作 |
+| Connection | “Agent 获得的模型或数据授权” | Provider、范围、费用、健康与撤销 |
+
+WorkflowRevision、Run、Artifact、Evaluation、PolicyDecision 和 ChangeSet 只在高级详情或开发者模式出现。Approval 不建设全局一级页面；真正需要用户决定时，在当前对话和通知中出现一次清楚请求。
+
+## 信息架构
 
 ```text
 Public
@@ -52,42 +64,35 @@ Public
 ├── Examples
 └── GitHub
 
-App
-├── Projects
-├── Create Project
-├── Project Workspace
+App / Desktop
+├── Home
+│   ├── Agent list
+│   └── Intent composer
+├── Agent workspace
 │   ├── Conversation
-│   ├── Workflow
-│   ├── Runs
-│   ├── Evidence
-│   └── Evaluations
-├── Approvals
+│   ├── Loops
+│   ├── Activity
+│   └── Results
+├── Connections
 └── Settings
-    ├── Project
-    │   ├── General
-    │   ├── Sources
-    │   ├── Capabilities
-    │   ├── Schedules
-    │   ├── Memory
-    │   ├── Notifications
-    │   └── Security
-    └── Account
-        ├── Profile
-        ├── Model Providers
-        ├── Secrets
-        ├── Usage
-        └── Appearance
+    ├── Execution & privacy
+    ├── Model providers
+    ├── Notifications
+    ├── Usage
+    └── Appearance
 ```
 
-阶段最小范围：
+首版不建立 Projects、Workflow、Runs、Evidence、Evaluations、Approvals、Memory 和 Security Center 等一级导航。团队空间与组织管理也不进入首版。
+
+### 阶段范围
 
 | 阶段 | 页面与入口 |
 | --- | --- |
-| Phase 0 | 单一 Project Workspace：Conversation、Run、Evidence、最小 Provider 设置 |
-| Phase 1 | Projects、Create、Conversation、Workflow、Runs、Evidence、Sources、Notifications、Usage |
-| Phase 3+ | 独立 Evaluations、全局 Approvals、Memory 管理和完整 Security Center |
+| Phase 0 | 单一 Agent Workspace、Loop / Activity / Result 卡片、Connection 与本地隐私设置 |
+| Phase 1 | Agent Home、云端执行选择、Sources / Notifications / Usage、来源 Inspector |
+| Phase 2+ | 多 Agent 管理、渐进式 Workflow / Evaluation / Version 详情 |
 
-首版不建立独立“Agent 商店”或“Workflow 画布”一级入口。尚未进入当前阶段的页面可以通过内联卡片承载必要动作，但不能出现空壳导航。
+尚未实现的功能不放空壳入口。
 
 ## 页面规范
 
@@ -95,197 +100,194 @@ App
 
 首屏结构：
 
-1. 简洁导航：Logo、Docs、Examples、GitHub、Open app；
-2. 一句话价值：“Describe the outcome. LoopEvo builds and evolves the workflow.”；
-3. 大型 Intent Composer，可直接输入长期目标；
-4. 3–4 个真实目标示例，如竞争情报、技术雷达、研究跟踪；
-5. 从 Intent 到 Evidence 到 Evolution 的可视闭环；
-6. 开源、自托管、治理和来源合规说明；
-7. GitHub CTA。
+1. Logo、Docs、Examples、GitHub、Open app；
+2. 一句话价值：“Describe the goal. Your Agent builds the loop.”；
+3. 大型 Intent Composer；
+4. 竞争情报、研究跟踪、学习和重复分析等真实示例；
+5. 从 Goal → Agent → Loop → Result → Evolve 的可视闭环；
+6. “Local private or cloud” 的清楚选择；
+7. 开源、Provider 授权和 GitHub CTA。
 
-页面使用浅色段落与一到两个黑色全宽段落交替，不用密集功能墙。动画只解释状态流转，并尊重 `prefers-reduced-motion`。
+页面用浅色段落与一到两个深色全宽段落交替，不堆叠功能墙。动画只解释状态流，并尊重 `prefers-reduced-motion`。
 
-### Projects
+### Home
 
-- 顶部只保留标题、搜索、状态筛选和 New Project；
-- 卡片展示名称、目标摘要、当前 Release、最近 Run、健康状态和待审批数量；
-- 无结果状态直接提供 Intent Composer，不展示空白仪表盘；
-- Credits / Usage 放在侧栏底部或设置内，不抢占主任务空间。
+- 首次打开只显示一句引导、示例和 Intent Composer；
+- 已有 Agent 时显示名称、目标摘要、健康、下一个 Loop 和最近 Result；
+- 顶部可切换或查看 `Local private` / `Cloud`，但不要求用户先选技术部署；
+- 空状态直接让用户描述目标，不展示空白 Dashboard；
+- 不用 Credits、模型参数和工作流节点抢占首要任务。
 
-### Create Project
-
-默认是一个居中的自然语言输入，而不是多步骤表单：
-
-- 上方显示简短引导；
-- 中间提供可编辑目标示例；
-- 底部大型 Composer 支持附件和约束；
-- 提交后进入同一个 Project Workspace，由 Agent 输出目标复述、调研计划和需要的授权。
-
-只有会改变成本、权限、数据范围或交付方式的字段才逐步提问。
-
-### Project Workspace
+### Agent Workspace
 
 桌面布局：
 
 ```text
-┌──────────────┬─────────────────────────────────┬──────────────────────┐
-│ Project rail │ Conversation / Workflow / Runs  │ Context inspector    │
-│              │                                 │ sources / evidence   │
-│ projects     │ timeline                        │ version / cost       │
-│ approvals    │ inline plan and result cards    │                      │
-│ settings     │                                 │                      │
-│              │ sticky composer                 │                      │
-└──────────────┴─────────────────────────────────┴──────────────────────┘
+┌──────────────┬──────────────────────────────────┬────────────────────┐
+│ Agent rail   │ Conversation + inline cards      │ Context inspector  │
+│              │                                  │ Result / Source    │
+│ Agents       │ Goal / Loop / Activity / Result  │ Version / Cost     │
+│ Connections  │                                  │ Advanced details   │
+│ Settings     │ Sticky composer                  │                    │
+└──────────────┴──────────────────────────────────┴────────────────────┘
 ```
 
-- 左栏可收起，显示项目、全局审批和设置；
-- 中栏最大宽度约 800 px，保证对话和证据可读；
-- 右栏按选中对象展示 Workflow、Source、Evidence、Diff 或 Trace；无上下文时收起；
-- 顶部固定 Project、Release、Run 状态和 Run / Pause 主动作；
-- `Conversation / Workflow / Runs / Evidence / Evaluations` 是稳定视图，不依赖 Agent 消息中的临时链接；
-- Composer 固定在底部，发送前展示当前作用域，例如“修改 Draft”或“分析 Run #42”。
+- 左栏可收起，只显示 Agent、Connections 和 Settings；
+- 中栏最大宽度约 800 px，保证对话与结果可读；
+- 右栏按选中对象显示来源、覆盖、版本、费用或 Trace；默认收起；
+- 顶部固定 Agent 名称、运行位置、健康和 Stop / Run 主动作；
+- `Loops / Activity / Results` 是稳定短标签，可从对话卡片到达；
+- Composer 显示当前作用域，例如“告诉 Agent 新目标”或“改进这个 Loop”。
 
-### Settings
+### Connections
 
-- 桌面使用居中大面板或完整页面，左侧分类、右侧内容；
-- 项目设置和账号设置用分组标题分开；
-- `Secrets` 只展示名称、作用域、最近使用和轮换状态，不回显值；
-- `Memory` 展示作用域、类型、来源、更新时间、冲突和是否参与当前 Workflow；
-- `Sources` 展示授权、checkpoint、覆盖、费用、健康和删除入口；
-- 危险操作独立区域，并要求清楚说明影响和可恢复性。
+- 分为 Model、Source、Delivery 三类，不按技术协议拆页面；
+- 每项显示 Provider、授权范围、运行位置、最近使用、费用和健康；
+- 本地 Provider 标记“设备直连”，云端 Provider 标记“由 LoopEvo Cloud 调用”；
+- Secret 从不回显，只提供测试、缩小范围、轮换和撤销；
+- Connection 失效说明受影响 Loop，不静默降级。
 
-## 对话与事实面的协作
+### Execution & Privacy
 
-Agent 消息不能只输出大段自然语言。涉及长期状态时，使用结构化卡片：
+必须使用准确、可验证的文案：
 
-| 组件 | 用途 | 必须显示 |
+| 选项 | 必须说明 |
+| --- | --- |
+| Local private | Agent、Run、Memory 和 Artifact 留在本机；模型和 Source 请求由设备直达 Provider；电脑或本地 Host 停止后 Loop 暂停 |
+| LoopEvo Cloud | 数据和 Run 存在 LoopEvo 云；设备关闭后继续运行；费用与保留策略可查看 |
+
+不使用“完全离线”“数据绝不离开电脑”等不准确表述。切换 Loop 的运行位置实际创建新 Activation；默认不搬迁 Secret、Run、Memory 和 Artifact。界面在迁移前展示重复副作用风险和停止旧 Activation 的状态。独立多用户 Self-hosted 宿主仍是未来方向，完成运行与运维设计前不显示为可选模式。
+
+## 对话卡片
+
+Agent 消息优先使用简洁结构化卡片，不输出大段系统术语：
+
+| 卡片 | 用途 | 默认显示 |
 | --- | --- | --- |
-| `GoalSummaryCard` | 复述目标 | 范围、周期、输出、预算、未知项 |
-| `ResearchPlanCard` | 首次调研计划 | 问题、步骤、预计耗时、外部访问 |
-| `SourceProposalCard` | 推荐信源 | 理由、覆盖、授权、费用、风险、替代项 |
-| `WorkflowDraftCard` | 展示候选流程 | 触发器、关键步骤、能力、策略、版本 |
-| `ApprovalCard` | 高影响确认 | 动作、影响、权限、费用、有效期、拒绝结果 |
-| `RunProgressCard` | 执行进度 | 当前步骤、成功/等待/重试、已用时间和成本 |
-| `EvidenceCard` | 结论依据 | 来源、作者、时间、原文摘要、引用与可信状态 |
-| `CoverageGapCard` | 明示缺口 | 未覆盖来源、授权失败、时间缺口和影响 |
-| `EvolutionDiffCard` | 工作流改进 | 基线与候选 Diff、依据、评测、风险、回滚点 |
+| `GoalCard` | 复述目标 | 结果、范围、周期、未知项 |
+| `PlanCard` | 解释准备做什么 | 关键步骤、预计时间、需要的 Connection |
+| `ConnectionRequestCard` | 一次授权 | Provider、数据、范围、费用、有效期、拒绝影响 |
+| `LoopCard` | 沉淀自动任务 | 做什么、触发方式、下次运行、local / cloud |
+| `ActivityCard` | 长任务进度 | 当前阶段、等待 / 重试、耗时、费用、Stop |
+| `ResultCard` | 展示结果 | 输出、验证依据、完整性、不确定性、导出 |
+| `BoundaryRequestCard` | 超出已有 Grant | 新增权限 / 预算 / 目标、原因、可选最小范围 |
+| `ChangeCard` | 自动改进说明 | 改了什么、依据、效果、回滚入口 |
+| `CoverageGapCard` | 明示缺口 | 未覆盖来源、时间范围、授权或费用影响 |
 
-卡片中的状态必须同步到对应事实视图；对话内容不能成为唯一记录。
+Workflow、Run、Evaluation 和版本 ID 放在“技术详情”，不能成为理解卡片的前提。
+
+## 授权与自动化交互
+
+- 低风险、可逆、只读且在 PolicyGrant 内的动作直接执行并留痕；
+- 首次 Connection 或新的敏感范围使用一次清楚授权，后续同类 Tool 不重复询问；
+- 权限、预算、数据用途、外部写入、删除和代码发布扩大时使用 Boundary Request；
+- 用户可以随时查看、缩小、暂停或撤销 Grant；
+- 自动进化通过简短 Change Card 告知，不要求逐次批准；
+- Change Card 必须提供依据、观察结果和回滚入口；
+- 长任务立即出现 Activity，允许 Stop，不锁死对话；
+- 错误说明影响、已自动尝试什么和用户是否必须介入，不直接显示堆栈或 Secret。
 
 ## 视觉 Token
 
-以下是 LoopEvo 自己的初始 Token，目标是接近 Wegic 的克制感，而非逐值复制：
+以下 Token 追求 Wegic 的克制感，不逐值复制其设计：
 
 ### 颜色
 
 | Token | 值 | 用途 |
 | --- | --- | --- |
-| `--canvas` | `#F7F6F2` | 页面主背景 |
+| `--canvas` | `#F7F6F2` | 页面背景 |
 | `--surface` | `#FFFFFF` | 卡片与面板 |
-| `--surface-subtle` | `#F0EFEB` | 选中、分组和次级面 |
+| `--surface-subtle` | `#F0EFEB` | 选中与次级面 |
 | `--ink` | `#121212` | 主文字与深色面 |
 | `--ink-muted` | `#6D6B66` | 次级信息 |
-| `--line` | `#E4E2DC` | 细边框与分隔 |
-| `--accent` | `#7557FF` | Agent、主动作和运行中状态 |
-| `--verified` | `#1F9D68` | 已验证、成功和来源可用 |
-| `--verified-ink` | `#125E3E` | 浅色背景上的成功状态文字 |
-| `--warning` | `#B87418` | 覆盖缺口、预算和等待 |
-| `--warning-ink` | `#70400A` | 浅色背景上的警告文字 |
-| `--danger` | `#D14343` | 失败、撤销和破坏性动作 |
-| `--danger-ink` | `#8A2020` | 浅色背景上的危险状态文字 |
+| `--line` | `#E4E2DC` | 边框与分隔 |
+| `--accent` | `#7557FF` | Agent、主动作、运行中 |
+| `--verified` | `#1F9D68` | 已验证与成功 |
+| `--warning` | `#B87418` | 覆盖缺口与等待 |
+| `--danger` | `#D14343` | 失败、撤销与破坏性动作 |
 
-`--verified`、`--warning` 和 `--danger` 只用于图标、边框、大字号或非文本强调；普通文字使用对应 `*-ink` Token。颜色不能单独表达状态，始终结合图标、文字和 `aria-live`。
+状态色只用于图标、边框和非文本强调；普通文字使用满足对比度的深色变体。颜色不能单独表达状态，必须结合图标和文字。
 
-### 字体
+### 字体与尺度
 
-- Display：`Instrument Sans`，用于首页标题和少量大数字；
-- UI / Body：`Inter`，用于应用正文、表格和控制项；
-- Mono：`JetBrains Mono`，用于 ID、版本、JSON、日志和 Diff；
-- 字重以 400 / 500 / 600 为主，不使用大面积 700+。
-
-建议字号：Display 64/70、H1 44/50、H2 32/38、H3 22/28、Body 16/24、Small 14/20、Meta 12/16。移动端 Display 降为 42/46，H1 降为 34/40。
+- Display：`Instrument Sans`；
+- UI / Body：`Inter`；
+- Mono：`JetBrains Mono`，只用于 ID、版本、日志和 Diff；
+- 字重以 400 / 500 / 600 为主；
+- Display 64/70、H1 44/50、H2 32/38、H3 22/28、Body 16/24、Small 14/20；
+- 移动端 Display 42/46，H1 34/40。
 
 ### 间距、圆角与阴影
 
-- 4 px 基础网格；常用间距 8 / 12 / 16 / 24 / 32 / 48 / 64；
-- 控件圆角 10 px，卡片 16 px，大面板 20 px，胶囊使用 999 px；
-- 默认 1 px `--line` 边框；阴影只用于浮层和 Composer；
-- 正文行宽 65–80 字符；官网内容宽度 1200 px，应用中栏约 800 px。
+- 4 px 基础网格，常用 8 / 12 / 16 / 24 / 32 / 48 / 64；
+- 控件 10 px、卡片 16 px、大面板 20 px、胶囊 999 px；
+- 默认 1 px `--line` 边框，阴影只用于浮层与 Composer；
+- 正文行宽 65–80 字符，应用中栏约 800 px。
 
 ## 状态语言
 
-统一状态，不用含糊的“处理中”：
-
-| 状态 | 含义 |
+| 用户状态 | 含义 |
 | --- | --- |
-| Draft | 尚未发布，可修改 |
-| Awaiting approval | 等待用户或策略审批 |
-| Scheduled | 已安排但未开始 |
-| Running | 正在执行且有心跳 |
-| Waiting | 等待 Timer、Signal、Provider 或预算窗口 |
+| Ready | Agent 可以接受目标 |
+| Running | 正在执行且有最近进度 |
+| Waiting | 等待时间、Provider 或已知外部条件 |
+| Needs you | 只有边界扩大或无法自动恢复时使用 |
+| Paused | Loop 被用户或 Policy 暂停 |
 | Degraded | 仍有结果，但覆盖、质量或延迟下降 |
-| Failed | 已停止，需要干预或自动重试已耗尽 |
-| Cancelled | 被用户或策略终止 |
-| Verified | 输出通过当前版本的验证规则 |
+| Failed | 自动恢复耗尽，需要查看影响 |
+| Completed | 本次 Activity 已完成 |
 
-每个失败状态提供错误类别、影响、已经重试什么和下一步；不直接显示原始堆栈或 Secret。
-
-## 交互规则
-
-- 低风险、可逆、只读动作可直接执行并留痕；
-- 凭据、费用、外部写入、数据删除和生产发布必须显示 Approval Card；
-- 所有长任务立即返回 Run，持续流式更新，不锁死对话；
-- 用户可 Pause、Cancel、Retry from step，并能区分“重跑”与“从检查点恢复”；
-- Agent 修改 Draft 时实时展示结构化 Diff，不在后台静默覆盖；
-- 证据引用支持在右栏预览并回到原链接；受限内容只展示许可范围内的信息；
-- 删除操作先展示覆盖范围、保留规则和是否可恢复。
+Draft、Revision、Checkpoint 等内部状态只在高级详情出现。
 
 ## 响应式
 
 ### 小于 768 px
 
-- 单列 Conversation 为默认；
-- 左栏使用抽屉，右侧 Inspector 使用底部 Sheet；
-- 顶部只保留返回、项目名、状态和主动作；
-- 视图切换使用可横向滚动的短标签；
-- Composer 吸底，键盘弹出后仍保留发送与停止；
-- 表格转换为分组列表，不横向压缩关键字段。
+- 单列 Conversation 默认；
+- 左栏使用 Drawer，Inspector 使用 Bottom Sheet；
+- 顶部只保留返回、Agent、local / cloud 状态和 Stop；
+- Loops / Activity / Results 使用可横向滚动短标签；
+- Composer 吸底，键盘弹出后仍可发送与停止；
+- 表格转换为分组列表。
 
 ### 768–1199 px
 
 - 左栏默认收起；
 - Inspector 与主内容互斥打开；
-- Workflow 图以只读缩略图 + 节点详情呈现。
+- 高级 Workflow 详情使用只读摘要，不显示拥挤画布。
 
 ### 1200 px 及以上
 
-- 支持三栏；右栏宽 320–400 px；
-- 用户关闭 Inspector 后，中栏保持居中而不是铺满。
+- 支持三栏，右栏宽 320–400 px；
+- 关闭 Inspector 后中栏保持居中，不无意义铺满。
 
 ## 无障碍与动效
 
-- 文本和交互对比度满足 WCAG 2.2 AA；
-- 所有动作可键盘完成，焦点顺序与视觉顺序一致；
+- 文本与交互满足 WCAG 2.2 AA；
+- 所有核心路径可键盘和读屏完成；
 - 触控目标至少 44 × 44 px；
 - Dialog / Drawer / Sheet 正确管理焦点、Escape 和背景滚动；
-- Run 更新使用节制的 `aria-live`，避免连续朗读日志；
-- 不用无限骨架屏；超过预期时间时说明等待原因；
+- Activity 更新使用节制的 `aria-live`，不连续朗读日志；
+- 超过预期等待时间时说明原因，不使用无限骨架屏；
 - `prefers-reduced-motion` 下关闭视差、自动滚动和非必要过渡；
-- Diff、图表和状态均提供文本等价信息。
+- Diff、图表和状态提供文本等价信息。
 
 ## 文案风格
 
 - 先说结果或状态，再解释步骤；
-- 区分“已验证”“模型判断”“覆盖缺口”和“需要授权”；
-- 不使用“AI 已经完全理解”“全网覆盖”“绝对准确”等不可验证表述；
-- 按钮描述动作和对象，例如“批准并发布 v3”，不用泛化的“确认”；
-- 成本同时展示预计值、已用值和预算，不只展示 Credits。
+- 区分“来源事实”“Agent 判断”“覆盖缺口”和“需要授权”；
+- 不使用“完全理解”“全网覆盖”“绝对安全”“完全离线”等表述；
+- 按钮描述动作和范围，例如“允许读取这个文件夹”，不用泛化“确认”；
+- 成本同时显示预计、已用和预算，不只显示 Credits；
+- 技术名词默认翻译为用户任务，详情中再提供原始术语。
 
 ## 验收清单
 
-- 用户无需打开画布即可创建并理解第一个工作流；
-- 每个 Agent 计划、外部动作、结论和变更都能进入稳定事实视图；
-- 无论桌面或移动端，Run 状态、停止动作、证据和待审批项不丢失；
-- 视觉上保持近白画布、大留白、强层级和克制强调色；
+- 新用户不理解 Workflow、Run 和 Tool 也能创建第一个 Agent 与 Loop；
+- Grant 内自动运行不产生重复审批，边界扩大能被准确拦截；
+- local / cloud 数据路径、Provider 发送和设备在线限制表达准确；
+- 每个长期 Loop、Activity、Result 和 Connection 可以再次找到；
+- 结果可以展开验证依据、完整性、费用和技术 Trace；信息流 Result 再展示来源与覆盖，但默认不制造认知负担；
+- 视觉保持近白画布、大留白、强层级和克制强调色；
 - 不包含 Wegic 的功能模型、品牌资产、专有内容或逐页复刻；
-- 页面在键盘、读屏、高缩放和 reduced motion 下可完成核心路径。
+- 桌面和移动端均能完成键盘、读屏、高缩放和 reduced-motion 核心路径。

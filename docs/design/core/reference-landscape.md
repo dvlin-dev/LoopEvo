@@ -8,168 +8,225 @@ status: active
 
 ## 文档定位
 
-本文记录 LoopEvo 产品和架构决策的外部依据。事实仅取自截至 2026-08-01 的官方文档和官方 GitHub；“借鉴、避免、决策”属于 LoopEvo 的研究判断。外部能力、版本、部署形态与许可证在采用前必须重新核验。
+本文记录 LoopEvo 产品与架构决策的外部依据。事实基于截至 2026-08-01 的官方文档和官方 GitHub；“借鉴、避免、决策”属于 LoopEvo 的判断。外部能力、版本、许可和条款在采用前必须重新核验。
 
 ## 总体结论
 
-在本文核验的项目中，尚未发现一个项目同时把以下全部能力作为开源、可自托管的一等产品模型。这个判断基于有限样本，不代表穷尽市场：
+LoopEvo 不应复刻一个更大的聊天 Agent、节点自动化平台或垂直舆情工具。应组合现有产品已经证明有效的部分：
 
 ```text
-自然语言目标
-→ 自动调研信源与能力
-→ 版本化 Source Strategy 与 Workflow
-→ 可恢复的长期执行
-→ 原始 Evidence 与派生链
-→ 质量和成本评估
-→ Replay、审批、Canary 与 Rollback
+Gumloop 的自然语言创建与渐进配置
++ Hermes / OpenClaw 的本地常驻、Memory 与调度
++ Codex / Claude Code 的工具、沙箱与可验证执行
++ Cloudflare Workflows 的云端持久运行
++ 商业情报产品的来源、结果与运营体验
+= 本地私有或云端运行、可沉淀并可验证进化的通用 Agent
 ```
 
-n8n、Dify、Gumloop 等已经能够通过自然语言生成或改进流程，Gumloop 也已提供评估与受审查的反思。因此 LoopEvo 的差异不能建立在“AI 会搭流程”或“流程会改进”上，而必须落到统一的 `SourceStrategyVersion + WorkflowVersion + Run + Evidence + Evaluation + EvolutionProposal` 模型、运行版本固定和可移植的治理发布链。
+差异不在“Agent 会搭流程”或“流程会反思”，而在：
 
-## 许可证与部署形态
+- 普通用户只描述目标，不先编排；
+- 一次任务可以直接执行，只有必要时才沉淀 Loop；
+- AgentRevision 与 WorkflowRevision 可移植，WorkflowRevision 固定所用 AgentRevision，Activation 明确绑定 local 或 cloud；
+- 本地私有模式不依赖 LoopEvo 云端；
+- Capability、Connection、PolicyGrant 与 Skill 分离；
+- 自动进化能在授权范围内运行、验证和回滚，而不是每次审批或无边界自改。
 
-| 项目 | 许可 / 形态 | 对 LoopEvo 的含义 |
+## 许可与产品形态
+
+| 项目 | 许可 / 形态 | 对 LoopEvo 的意义 |
 | --- | --- | --- |
-| [OpenClaw](https://github.com/openclaw/openclaw/blob/main/LICENSE) | MIT，自托管开源 | 可借鉴常驻 Gateway、渠道和调度，不作为产品模型 |
-| [Hermes Agent](https://github.com/NousResearch/hermes-agent/blob/main/LICENSE) | MIT，自托管开源 | 可借鉴学习、Memory 和 Observer，不复制中央巨型 Agent |
-| [OpenAI Codex](https://github.com/openai/codex/blob/main/LICENSE) | Apache-2.0，开源 Coding Agent | 可选 Coding Worker 与规则 / Skill 参照 |
-| [Claude Code](https://github.com/anthropics/claude-code/blob/main/LICENSE.md) | Anthropic Commercial Terms | 可选商业 Coding Worker，不能成为开源核心依赖 |
-| [Dust](https://github.com/dust-tt/dust/blob/main/LICENSE) | MIT 仓库 + 商业托管服务 | 可借鉴团队 Agent Builder，部署与服务范围需分别核验 |
-| [Gumloop](https://www.gumloop.com/) | 公共资料展示的托管商业产品；本文未找到完整核心自托管发行 | 最接近的交互参照，不依赖其托管状态 |
-| [n8n](https://github.com/n8n-io/n8n/blob/master/LICENSE.md) | Sustainable Use License，`.ee` 另受 Enterprise License | 不是 OSI 开源底座；仅桥接或借鉴契约 |
-| [Dify](https://github.com/langgenius/dify/blob/main/LICENSE) | Dify Open Source License，基于 Apache-2.0 且有附加条件 | 不直接作为核心，采用前逐条核验限制 |
-| [Airbyte](https://github.com/airbytehq/airbyte/blob/master/LICENSE) | 组件存在 MIT / ELv2 差异 | 只按组件核验复用，不部署整套平台 |
-| [Pi](https://github.com/earendil-works/pi/blob/main/LICENSE) / [Temporal](https://github.com/temporalio/temporal/blob/main/LICENSE) | MIT；均可自托管 | 暂定基础依赖，必须先通过 Phase 0 Spike |
+| [OpenClaw](https://github.com/openclaw/openclaw/blob/main/LICENSE) | MIT，自托管开源 | 借鉴本地 Gateway、Channel、Session 和 Schedule |
+| [Hermes Agent](https://github.com/NousResearch/hermes-agent/blob/main/LICENSE) | MIT，自托管开源 | 借鉴本地 Daemon、Memory、Skills、Cron 和 Observer |
+| [OpenAI Codex](https://github.com/openai/codex/blob/main/LICENSE) | Apache-2.0，开源 Coding Agent | 官方本地外部 Agent 与 App Server 集成目标 |
+| [Claude Code](https://github.com/anthropics/claude-code/blob/main/LICENSE.md) | Anthropic 商业条款 | API / Companion 候选；订阅后台集成有明确限制 |
+| [Goose](https://github.com/block/goose/blob/main/LICENSE) | Apache-2.0，本地桌面 / CLI | 借鉴外部 Agent、ACP 与多 Provider 桌面体验 |
+| [OpenHands](https://github.com/OpenHands/OpenHands/blob/main/LICENSE) | MIT，开源 Agent 平台 | 借鉴本地 / 远程 Backend 与 Agent Adapter |
+| [Pi](https://github.com/earendil-works/pi/blob/main/LICENSE) | MIT，Agent 工具包 | LoopEvo 原生 Agent Loop 候选 |
+| [Gumloop](https://www.gumloop.com/) | 托管商业产品 | 最接近的自然语言 Agent / 自动化交互参照 |
+| [n8n](https://github.com/n8n-io/n8n/blob/master/LICENSE.md) | Sustainable Use License | 借鉴 Connector 与执行体验，不作为开源核心 |
+| [Dify](https://github.com/langgenius/dify/blob/main/LICENSE) | 带附加条件的 Dify Open Source License | 借鉴 Provider、Workflow 与 Plugin，不作为核心依赖 |
+| [Cloudflare](https://developers.cloudflare.com/) | 托管平台服务 | 云端首选宿主，不进入共享领域类型 |
 
-## 用户指定的四类 Agent
+许可证列表只描述当前调研结论，不替代采用时的逐组件审查。
+
+## 通用 Agent 参照
 
 ### OpenClaw
 
-[OpenClaw](https://github.com/openclaw/openclaw) 是本地优先的常驻个人 AI 助手。其 [Gateway 架构](https://docs.openclaw.ai/concepts/architecture)统一接入渠道、Session 和 Agent；官方还提供 [Skills](https://docs.openclaw.ai/tools/skills)、[Plugins](https://docs.openclaw.ai/tools/plugin)、[Subagents](https://docs.openclaw.ai/tools/subagents) 与 [Cron Jobs](https://docs.openclaw.ai/automation/cron-jobs)。
+[OpenClaw](https://github.com/openclaw/openclaw) 以常驻本地 Gateway 统一接入渠道、Session、Skills、Plugins、Subagents 和 Cron。
 
-借鉴：Gateway / Channel / Worker 分离，持久 Session，状态变化触发，自适应下次检查，幂等事件和 Skill 信任边界。
+借鉴：
 
-不照搬：不以几十个消息渠道、个人助理、语音和桌面控制为 MVP；不以 Agent Session / Memory 代替 Workflow、Run 和 Evidence；不建立同时负责推理、调度、存储与权限的巨型 Gateway。
+- 本地 Host 与 UI / Channel 分离；
+- 长期 Session、状态变化触发和自适应下次检查；
+- Skill 信任边界与无人值守任务的固定上下文。
+
+不照搬：
+
+- 不把几十个消息渠道、个人助理和语音作为首版；
+- 不让一个 Gateway 同时成为权限、事实库、调度与业务模型；
+- Session 不能替代 Revision、Activation、Run 和 Artifact。
 
 ### Hermes Agent
 
-[Hermes Agent](https://github.com/NousResearch/hermes-agent) 是 NousResearch 的通用自改进 Agent，覆盖多模型、Session 搜索、Skills、MCP、Cron、Delegation、Sandbox 和 Observer Hooks。官方资料包括[架构](https://github.com/NousResearch/hermes-agent/blob/main/website/docs/developer-guide/architecture.md)、[Memory](https://github.com/NousResearch/hermes-agent/blob/main/website/docs/user-guide/features/memory.md)、[Skills](https://github.com/NousResearch/hermes-agent/blob/main/website/docs/user-guide/features/skills.md)、[Delegation](https://github.com/NousResearch/hermes-agent/blob/main/website/docs/user-guide/features/delegation.md)与[可观测 Hooks](https://github.com/NousResearch/hermes-agent/blob/main/docs/observability/README.md)。
+[Hermes Agent](https://github.com/NousResearch/hermes-agent) 覆盖多模型、Session、Memory、Skills、MCP、Cron、Delegation、Sandbox 和 Observer Hooks。
 
-借鉴：需要判断的 Agent 任务与机械脚本分开；Session 检索与压缩谱系；无人值守任务固定模型和能力；Observer 只记录不改行为；学习变更展示 Diff。
+借鉴：
 
-不照搬：不让中央 Agent 同时掌握工具、会话、调度、记忆和存储；后台复盘不能直接改生产 Skill、Prompt 或代码；个人 Agent 人格不是 LoopEvo 的核心资产。
+- 本地 Daemon 与长期任务；
+- 需要判断的 Agent 工作与机械脚本分离；
+- Memory 分层、上下文压缩和只观测不改行为的 Hooks；
+- 学习变更展示 Diff，而不是静默改变人格。
 
-### OpenAI Codex
+不照搬：
 
-[Codex](https://github.com/openai/codex) 面向软件工程，提供 CLI、IDE、Desktop、Cloud、[AGENTS.md](https://learn.chatgpt.com/docs/agent-configuration/agents-md)、[Skills](https://learn.chatgpt.com/docs/build-skills)、[MCP](https://learn.chatgpt.com/docs/extend/mcp)、[Subagents](https://learn.chatgpt.com/docs/agent-configuration/subagents)、[Automations](https://learn.chatgpt.com/docs/automations)、[App Server](https://learn.chatgpt.com/docs/app-server)以及独立的[审批与沙箱](https://learn.chatgpt.com/docs/agent-approvals-security)边界。
+- 不建设掌握所有 Tool、Session、Schedule、Memory 和存储的中央巨型 Agent；
+- Agent 人格不是 LoopEvo 的唯一资产；
+- 后台反思不能绕过 Policy、Evaluation 与回滚。
 
-借鉴：规则、Skill、Memory 和任务上下文分层；Plan → Execute → Verify；沙箱与审批正交；typed event protocol 解耦 UI；默认单任务；写操作使用隔离工作区。
+### Codex
 
-不照搬：Codex 的核心对象是代码仓库和开发任务，不是长期业务 Workflow。它只能作为可替换 Coding Worker，仓库规则不能代替运行时 Policy、Credential 和数据授权。
+[Codex](https://github.com/openai/codex) 已提供 CLI、Desktop、Cloud、AGENTS.md、Skills、MCP、Automations、审批与沙箱。[App Server](https://learn.chatgpt.com/docs/app-server) 明确面向在自有产品中进行深度集成，并覆盖认证、会话、审批与流式事件。
+
+借鉴：
+
+- Plan → Execute → Verify 与 typed event protocol；
+- 规则、Skill、Memory、任务上下文分层；
+- 沙箱与 Policy / Approval 正交；
+- 本地进程、隔离工作区和可验证结果。
+
+采用方式：
+
+- 桌面端启动官方 `codex app-server`，首选稳定 stdio JSONL；
+- 认证由 App Server 管理，LoopEvo 不复制其 Token；
+- 探测用户安装的 Codex 并限制受支持版本范围；只有随 LoopEvo 分发时才锁定精确版本与 Schema；禁用 experimental API；
+- `codex exec --json` 作为同一 Adapter 的降级路径；
+- Codex 是外部 Agent Runtime / Coding Capability，不是 Pi 的模型 Provider。
 
 ### Claude Code
 
-[Claude Code](https://code.claude.com/docs/en/overview) 提供 [Agent SDK Loop](https://code.claude.com/docs/en/agent-sdk/agent-loop)、[Dynamic Workflows](https://code.claude.com/docs/en/workflows)、[Routines](https://code.claude.com/docs/en/routines)、[Skills](https://code.claude.com/docs/en/skills)、[MCP](https://code.claude.com/docs/en/mcp)、[Subagents](https://code.claude.com/docs/en/sub-agents)、[Permissions](https://code.claude.com/docs/en/permissions)和[Sandboxing](https://code.claude.com/docs/en/sandboxing)。
+[Claude Code](https://code.claude.com/docs/en/overview) 提供 Agent Loop、Skills、MCP、Subagents、Permissions、Sandbox 和 [headless mode](https://code.claude.com/docs/en/headless)。这些能力证明 CLI 子进程技术可行。
 
-借鉴：将对话流程升级为可查看、保存和重跑的程序；支持 pipeline、fan-out、交叉验证、暂停、规模边界、token 可见性与成本预警；中间结果留在工作流状态；Skill 演进使用测试集和前后对比。
+但 [Claude Agent SDK](https://code.claude.com/docs/en/agent-sdk/overview) 对第三方产品有明确认证边界：未经 Anthropic 事先批准，不允许第三方提供 Claude.ai 登录或代表用户路由 Free、Pro、Max 订阅额度。
 
-边界：Dynamic Workflow 的恢复依赖同一 Session，Routines 在调研时仍为 research preview；它们不是跨进程业务运行保证。可重跑脚本也不足以表达 Source Strategy、checkpoint、原始 Evidence、不可变 Release 和完整发布治理。
+因此：
 
-## Agent 自动化与工作流产品
+- 正式后台 Adapter 使用用户 API Key、Bedrock、Vertex AI 或其他 Anthropic 支持方式；
+- 无 API Key 场景通过 MCP、Skill、Plugin 或安装入口，让用户在原生 Claude Code 中主动执行和控制；Companion 不通过 `claude -p`、后台代理或定时任务消费订阅，也不能驱动无人值守 Loop；
+- 只有取得 Anthropic 书面许可后，才增加 Claude Subscription Adapter；
+- 开源项目能够技术性调用订阅，不构成 LoopEvo 的分发许可依据。
 
-| 产品 | 已验证能力 | LoopEvo 应借鉴 | 仍然保持的差异 |
+## 外部 Agent 协议参照
+
+### ACP
+
+[Agent Client Protocol](https://agentclientprotocol.com/overview/introduction) 使用本地子进程与 JSON-RPC over stdio 连接编辑器 / Client 和 Agent，适合隔离完整 Agent Runtime。[codex-acp](https://github.com/agentclientprotocol/codex-acp) 展示了 Codex App Server 到 ACP 的适配方式。
+
+LoopEvo 借鉴其进程与事件边界，但首版不立即实现通用 ACP：
+
+- Codex 先使用官方 App Server Adapter；
+- 第二个真实外部 Agent 需要同一协议时再提取 ACP Adapter；
+- ACP 只解决通信，不替代 LoopEvo Policy、Run、Artifact 和 Capability 边界。
+
+### Goose 与 OpenHands
+
+- [Goose ACP Providers](https://goose-docs.ai/docs/guides/acp-providers) 证明桌面 / CLI 可以把外部 Agent 作为子进程 Provider；借鉴配置、事件映射和进程生命周期，不把其订阅做法当作供应商许可。
+- [OpenHands](https://github.com/OpenHands/OpenHands) 展示本地、远程和云端 Agent Backend 的切换；借鉴 Adapter 与 Sandbox，不复制复杂多 Backend 产品层。
+
+## Agent 与自动化产品
+
+| 产品 | 已验证能力 | 借鉴 | LoopEvo 保持的边界 |
 | --- | --- | --- | --- |
-| [Gumloop Agents](https://docs.gumloop.com/core-concepts/agents) | 对话更新 Instructions、Skills、Triggers；Tool 权限；[AI Trigger Creation](https://docs.gumloop.com/core-concepts/ai_trigger_creation) | 渐进配置、按需发现工具、逐 Tool allow / ask / deny | `SourceStrategyVersion`、原始 Evidence / Derivation、不可变 Workflow Release、运行版本固定、可移植自托管契约 |
-| [Gumloop Evaluations](https://docs.gumloop.com/core-concepts/evaluations) / [Reflections](https://docs.gumloop.com/core-concepts/reflections) | 测试用例比较变化；定期分析历史并引用证据提出改进；进入 Review Queue，也可对满足条件的低风险建议自动应用 | 反馈聚类、证据化建议、Review Queue | LoopEvo 要求统一 Replay → Canary → Rollback 发布链，不把“会反思”当独有卖点 |
-| [Dust](https://docs.dust.tt/docs/user-documentation/agents/create-your-first-agent) | Agent Builder、工具 / 数据建议、实时预览、团队知识权限 | AI 配置助手、最小知识范围、试运行与团队分发 | 信源理由、checkpoint、覆盖、证据和成本是一等对象 |
-| [n8n AI Workflow Builder](https://docs.n8n.io/build/ways-of-building-workflows/ai-workflow-builder/) | 可按自然语言创建和迭代 Workflow；AI Assistant 可编辑、测试和排错，并有[评估](https://docs.n8n.io/build/integrate-ai/test-and-improve-ai-workflows/understand-why-to-test/) | Connector 生命周期、节点 I/O、凭据、逐步调试和变更历史 | 不以画布为入口；不依赖其许可；把 Source Strategy、Evidence 和固定版本 Run 统一建模 |
-| [Dify New Agent](https://docs.dify.ai/en/self-host/use-dify/build/new-agent/build) | 可通过描述创建 Agent，支持 Workflow / Trigger / Human Input，并有[版本控制](https://docs.dify.ai/en/self-host/use-dify/build/version-control) | Model Provider、Workflow 预览、RAG、Plugin 和运行日志 | 不作为底座；LoopEvo 聚焦长期来源、checkpoint、证据和受治理演进 |
+| [Gumloop Agents](https://docs.gumloop.com/core-concepts/agents) | 对话更新 Instructions、Skills、Triggers 与 Tool 权限 | 自然语言创建、渐进配置、按需 Tool | 开放 Kernel、本地私有、portable Revision / Activation |
+| [Gumloop Evaluations](https://docs.gumloop.com/core-concepts/evaluations) / [Reflections](https://docs.gumloop.com/core-concepts/reflections) | 测试变化、分析历史、提出并可自动应用部分建议 | Evidence-based Change、低风险自动应用 | PolicyGrant、宿主独立、版本固定和自动回滚 |
+| [Dust](https://docs.dust.tt/docs/user-documentation/agents/create-your-first-agent) | Agent Builder、数据 / Tool 建议、实时预览 | 最小知识范围、试运行与团队分发 | 不把团队 SaaS 作为首版产品重心 |
+| [n8n AI Workflow Builder](https://docs.n8n.io/build/ways-of-building-workflows/ai-workflow-builder/) | 自然语言创建、编辑、测试与排错 Workflow | Connector 生命周期、凭据、执行历史 | 不从画布开始，不让用户理解节点才能使用 |
+| [Dify Agent](https://docs.dify.ai/en/self-host/use-dify/build/new-agent/build) | Agent、Workflow、Trigger、Human Input 与版本 | Provider、Plugin 和运行日志 | 不以 Dify 为底座，不暴露过多应用构建概念 |
 
-Gumloop 是产品交互上最接近的商业参照。LoopEvo 不以“Agent 会自动完善”为差异，而以开放可移植的事实模型、来源治理和可恢复发布链为差异。
+Gumloop 是交互和自动改进上最接近的商业参照。LoopEvo 不声称“会反思”独有，而是把本地私有、可移植定义、持久运行与授权边界做成统一产品。
 
-## Agent 与基础设施项目
+## Agent 与执行基础设施
 
 | 项目 | 可复用或借鉴 | 决策 |
 | --- | --- | --- |
-| [Pi](https://github.com/earendil-works/pi) | 模型适配、Agent Loop、Tool Calling、事件与上下文 | 暂定 Agent 内核；Phase 0 证明 Tool 暂停 / 恢复和 Adapter 隔离后确认 |
-| [Temporal](https://docs.temporal.io/temporal) | Event History、Durable Timer、Schedule、Signal / Update 和故障恢复 | 首选候选持久执行层；Phase 0 通过 Replay、Versioning 与自托管门槛后确认 |
-| [LangGraph](https://github.com/langchain-ai/langgraph) | 状态图、checkpoint、interrupt、确定性与 Agent 节点混合 | 学习契约；若 Pi 验证通过，不增加第二套 Agent Runtime |
-| [Airbyte Connector Builder](https://docs.airbyte.com/platform/connector-development/connector-builder-ui/overview) | Discover、认证、分页、增量 checkpoint、partition 和错误模型 | 借鉴 Connector CDK；许可逐组件核验，不部署整套平台 |
-| [Letta Code](https://github.com/letta-ai/letta-code) | 长期 Memory、Skill、Schedule 和 Git 式变更历史 | 借鉴分层与历史；演进 Workflow Artifact，而非无边界人格 |
-| [OpenHands](https://github.com/OpenHands/OpenHands) | 可替换 Coding Agent、Sandbox 和执行后端 | 通过 Coding Adapter 接入，不放进 Agent 内核 |
-| [OpenTelemetry](https://opentelemetry.io/docs/what-is-opentelemetry/) | 开放 Trace / Metric / Log 语义 | 采用协议；观测后端可替换 |
+| [Pi](https://github.com/earendil-works/pi) | 模型适配、Agent Loop、Tool、事件和上下文 | 唯一原生 Agent 候选；先做 Local 与 Workers Spike |
+| [Cloudflare Workflows](https://developers.cloudflare.com/workflows/) | Durable Step、重试、等待、事件与恢复 | 唯一云端持久 Run 引擎 |
+| [Cloudflare Agents SDK](https://developers.cloudflare.com/agents/) | Durable Object identity、实时会话与状态 | 首版不采用；避免与 Pi / Workflows 出现三个主脑 |
+| [Cloudflare Hyperdrive](https://developers.cloudflare.com/hyperdrive/) | 连接池与边缘数据库访问 | 连接 PostgreSQL 云端事实源 |
+| [Cloudflare R2](https://developers.cloudflare.com/r2/) | 大对象与原始 Artifact | 信息流 Alpha 按真实 Artifact 使用 |
+| [Temporal](https://docs.temporal.io/temporal) | 自托管持久执行、Timer、Signal 和 Event History | 重要架构参照；Cloudflare 优先路线不首发两套引擎 |
+| [LangGraph](https://github.com/langchain-ai/langgraph) | Checkpoint、Interrupt、图与 Agent 混合 | 学习契约，不增加第二套 Agent Runtime |
+| [OpenTelemetry](https://opentelemetry.io/docs/what-is-opentelemetry/) | 开放 Trace / Metric / Log | 后续映射 Domain Event，不能成为事实源 |
 
-## 主题情报与信息获取直接参照
+首版云端不采用 Agents SDK，也不让 Durable Objects 承担业务状态，因为它们会与 Pi 的 Session / Memory 和 Workflows 的恢复 / Schedule 重叠。若 Pi 必须运行于 Cloudflare Container，可使用平台要求的 Durable Object Binding，但它只管理 Container 基础设施、不保存 LoopEvo 业务状态；其他 Durable Objects 等真实 Presence 或单写者协调需求出现后再引入，并只保存可重建连接态。
 
-这一层决定数据授权、覆盖、增量和成本，不能只研究 Agent 框架。
+## 信息流 case 的直接参照
 
 | 类别 / 项目 | 已验证能力 | LoopEvo 的判断 |
 | --- | --- | --- |
-| 社交监听：[Brandwatch Consumer Research](https://www.brandwatch.com/products/consumer-research/)、[Meltwater Social Listening](https://www.meltwater.com/en/capabilities/social-listening) | 跨渠道品牌 / 竞品监听、实时信号、AI 分析、报告和企业协作 | 成熟的结果与运营 UX 参照；属于商业数据产品，不替代开放 Workflow 与 Provider 可移植性 |
-| 研究情报：[Feedly AI](https://feedly.com/ai) | 用 AI Model 过滤噪声并加速持续研究 | 借鉴 Topic / Model / Source 组合与研究体验；不把它误当通用工作流运行时 |
-| 数据能力：[Bright Data Social Media Scraper](https://brightdata.com/products/web-scraper/social-media-scrape) | 通过 API 提供社交数据采集、解析、批量请求和按交付计费能力 | 作为付费 Connector 候选；数据来源、条款、删除、字段、增量和费用仍需逐 Provider 验证 |
-| Web 能力：[Firecrawl](https://github.com/firecrawl/firecrawl) | 开源 + Cloud 的 search、scrape、crawl、map 和结构化输出 | 可选 Web Connector 参照；不是社交数据授权、调度或 Evidence 治理层 |
-| Trigger / Action：[IFTTT Applets](https://ifttt.com/docs/applets) | Trigger、Filter Code 和 Action 组成 Applet，平台或连接服务承担检查 / 推送 | 借鉴统一触发与动作契约；用户仍需选择服务，且缺少完整研究、证据与版本进化模型 |
-| 开源 Feed：[RSSHub](https://github.com/DIYgod/RSSHub) | 将大量站点内容转换为 RSS，可自托管 | 适合作为低成本 Source Adapter；每条 Route 仍需核验稳定性、许可和平台条款 |
-| 开源事件自动化：[Huginn](https://github.com/huginn/huginn) | 自托管 Agent 监控事件并执行动作 | 借鉴 Event、状态与 Agent 组合；编排主要由用户完成，不提供 LoopEvo 的目标调研与治理模型 |
-| 开源页面监控：[changedetection.io](https://github.com/dgtlmoon/changedetection.io) | 页面变化检测、条件、计划、浏览器步骤、通知与 AI 摘要 | 可借鉴变化 Diff 和通知；覆盖网站变化，不覆盖社区讨论和跨来源 Source Strategy |
+| [Brandwatch](https://www.brandwatch.com/products/consumer-research/) / [Meltwater](https://www.meltwater.com/en/capabilities/social-listening) | 跨渠道监听、实时信号、AI 分析和报告 | 成熟结果 UX；价格与封闭数据链推动开源可替代需求 |
+| [Feedly AI](https://feedly.com/ai) | Topic / Model / Source 组合与 AI 去噪 | 研究体验参照，不是通用 Agent Runtime |
+| [Bright Data Social](https://brightdata.com/products/web-scraper/social-media-scrape) | 付费社交数据采集与结构化交付 | X 等 Source Provider 候选；逐平台核验许可、增量、删除和成本 |
+| [IFTTT Applets](https://ifttt.com/docs/applets) | Trigger、Filter 与 Action | 借鉴事件 / 增量触发和统一 Action；不复刻用户手工编排 |
+| [RSSHub](https://github.com/DIYgod/RSSHub) | 大量站点转 RSS，可自托管 | 低成本 Source Adapter；逐 Route 核验稳定与条款 |
+| [Huginn](https://github.com/huginn/huginn) | 自托管 Event Agent 与 Action | 借鉴 Event、状态和通知；其编排仍主要由用户完成 |
+| [changedetection.io](https://github.com/dgtlmoon/changedetection.io) | 页面 Diff、条件、Schedule、浏览器和通知 | 借鉴变化检测，不等于社区讨论数据 |
+| [Firecrawl](https://github.com/firecrawl/firecrawl) | Search、Scrape、Crawl 与结构化输出 | 可选 Web Capability，不替代社交数据授权 |
 
-这些项目说明：LoopEvo 不应自建社交数据网络，也不能承诺全平台覆盖。核心应允许用户在官方 API、Bright Data 等商业 Provider、RSSHub 等开源 Source 和定向 Web Connector 之间选择，并统一处理授权、checkpoint、证据、成本和替换。
+LoopEvo 不自建社交数据网络。Kernel 只统一 Capability、Connection、Artifact、Checkpoint、成本和 Policy；具体 Source Plan 留在 info-flow case。
 
 ## Build / Reuse / Buy
 
 ### 必须自研
 
-- Intent / Research Planner；
-- WorkflowSpec、Compiler、Version / Release Registry；
-- `SourceStrategyVersion` 与 Connector Contract；
-- Evidence / Provenance 数据模型；
-- Evaluation、EvolutionProposal、Replay、Canary 与 Rollback；
-- Chat 控制面与 Workflow / Run / Evidence 事实面。
+- Agent / Revision / Activation / Run / Artifact Kernel；
+- 本地 Run Ledger 与双宿主一致性契约；
+- PolicyGrant、Capability Executor 和低打扰授权体验；
+- Evaluation、ChangeSet、自动启用与回滚；
+- 对话、Loop、Activity、Result 和 Connection 用户体验。
 
 ### 候选复用
 
-- Pi：Agent Loop 与模型工具层，Phase 0 验证后确认；
-- Temporal：持久执行与调度，Phase 0 验证后确认；
-- PostgreSQL / S3：结构化事实和大对象；
-- Playwright、MCP SDK、Agent Skills、Webhook、RSS；
-- OpenTelemetry：观测协议；
-- Codex、Claude Code、OpenHands：可插拔 Coding Worker；
-- RSSHub、Firecrawl 等：按 Connector 边界选择性接入。
+- Pi、Electron、SQLite、React 与 MCP SDK；
+- Cloudflare Workers、Workflows、Hyperdrive 与 R2；
+- Codex App Server、受 Anthropic Commercial Terms 约束且逐版本审查的 Claude Agent SDK；
+- RSSHub、Firecrawl 等按 Capability / Connector 边界接入；
+- OpenTelemetry 作为后续观测协议。
 
-### 购买或 BYOK
+### 接入或购买
 
-- LLM、搜索 API、云浏览器；
-- X、Reddit 等平台的官方 API 或合同明确的数据 Provider；
-- Brandwatch / Meltwater 等成品情报服务的数据或导出集成，仅在许可和价值成立时使用；
-- 企业 Identity、Secret、通知和可观测托管服务。
-
-供应商只提供能力，不拥有 LoopEvo 的 WorkflowVersion、Run、Evidence 和 Evaluation 事实模型。
+- 模型、搜索、云浏览器与通知；
+- X、Reddit 等官方 API 或合同明确的数据 Provider；
+- 企业身份、Secret 与观测托管服务。
 
 ## 最终差异化
 
 ```text
-OpenClaw / Hermes：让 Agent 持续存在和学习
-Codex / Claude Code：让 Agent 完成可验证的软件任务与编码流程
-n8n / Dify：用 AI 和画布生成、编辑并运行自动化或 AI 应用
-Gumloop：对话式配置、评估并反思 Agent 自动化
-LoopEvo：把持续目标、信源策略、原始证据、固定版本运行和治理发布链统一成开放工作流产品
+OpenClaw / Hermes：让本地 Agent 持续存在、拥有 Memory 与 Skills
+Codex / Claude Code：让 Agent 完成可验证的软件与计算机任务
+n8n / Dify：让用户或 AI 构建并运行自动化 / AI 应用
+Gumloop：用对话配置、评估和反思 Agent 自动化
+LoopEvo：让普通用户只说明目标，Agent 在本地私有或云端形成 Loop，并在授权边界内持续改进
 ```
 
 LoopEvo 必须坚持：
 
-1. **目标驱动：** 先理解持续目标，再选择来源和能力；
-2. **来源驱动：** 选择理由、授权、覆盖、checkpoint 和替代方案独立版本化；
-3. **证据驱动：** 原始证据、派生结论和变更依据可以追溯；
-4. **版本驱动：** Workflow、Capability、Model 和 Policy 在每次 Run 中固定；
-5. **治理驱动：** 进化是 Replay、审批、Canary 和 Rollback，不是在线自改。
+1. **Agent first：** Agent 是长期用户资产，Workflow 只在需要时生成；
+2. **Simple outside：** 用户看到 Agent、Loop 和结果，不被内部治理对象淹没；
+3. **Complete inside：** Revision、Run、Artifact、Capability、Memory 和 Policy 边界不能省略；
+4. **Local private by design：** 本地模式不依赖 LoopEvo 云端，同时准确披露模型 Provider 数据流；
+5. **Cloud when useful：** Cloudflare 提供全天候宿主，不污染共享领域模型；
+6. **Evolution inside grants：** 低风险变更自动验证和回滚，边界扩张才请求用户；
+7. **Vertical proof before abstraction：** 信息流跑通后用第二个 case 验证通用性。
 
 ## 明确不做
 
-- 不把消息渠道、模型或 Connector 数量当核心竞争力；
-- 不声称自然语言生成流程、评估或反思是 LoopEvo 独有；
-- 不在 MVP 建设个人助理、语音、桌面控制、Agent Teams 或公共市场；
-- 不复制 n8n / Dify 的完整画布与应用构建层；
-- 不在运行中执行 Agent 新生成的未评审代码；
-- 不将外部内容、Webhook 或模型输出视为可信指令；
-- 不把“进程退出成功”当业务成功，Run 必须验证结果和证据。
+- 不把 Connector、模型和消息渠道数量当核心竞争力；
+- 不从空白画布、节点库和复杂项目配置开始；
+- 不把每次聊天强制编译为 Workflow；
+- 不把技术可行的订阅复用误当 Provider 官方授权；
+- 不在首版并存 Pi、Cloudflare Agents SDK、Temporal 等多个主脑；
+- 不为本地模型、团队市场、多 Agent Supervisor 和全平台社交覆盖提前设计；
+- 不让网页、Webhook、Skill、MCP 或模型输出改变 Policy；
+- 不把进程退出成功当业务成功，Result 必须有来源或验证依据。

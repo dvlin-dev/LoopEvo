@@ -2,192 +2,176 @@
 
 # LoopEvo
 
-### 闭合工作循环，让流程持续进化。
+### 闭合循环，让工作持续进化。
 
-**一个将目标转化为持久、有证据、受治理 AI 工作流的开源平台。**
+**一个把目标转化为可复用、可持续改进 Loop 的开源通用 Agent 平台。**
 
 [English](./README.md) · [产品](./docs/design/core/product-and-architecture.md) · [架构](./docs/design/core/system-architecture.md) · [路线图](./docs/plans/roadmap.md)
 
 </div>
 
 > [!IMPORTANT]
-> **状态：Pre-alpha / 设计阶段。** LoopEvo 当前包含产品、架构、UI、路线图和仓库治理文档。下文描述的应用、运行时、连接器和集成均为已采纳设计或规划能力，并非已经实现的生产功能。
+> **状态：Pre-alpha / 设计阶段。** 仓库当前只有已采纳的产品、架构、UI、安全与路线图文档。下文的应用、运行时、Connector 和集成均为规划能力，不是已经实现的生产功能。
 
 ## LoopEvo 是什么？
 
-LoopEvo 将自然语言表达的持续目标转化为可审查、可长期运行的工作流。工作流能够执行、保存证据、衡量结果，并在明确治理下持续改进。
+告诉 LoopEvo 你想要什么。Agent 会调研问题、调用已有能力并完成工作；当任务需要重复或长期运行时，它会自动沉淀为 **Loop**。
 
 ```text
 目标
-→ 调研信源与能力
-→ 提出可审查工作流
-→ 审批并发布版本
-→ 持久执行
-→ 保留证据与结果
+→ Agent 调研并执行
+→ 需要重复或恢复时形成可复用 Loop
+→ 在本地私有或云端持续运行
+→ 保存结果与来源
 → 评估质量、成本与风险
-→ 提出最小变更
-→ 回放、评审、灰度、晋升或回滚
+→ 在用户授权边界内持续改进
 ```
 
-产品资产不是聊天记录，也不是永远即兴发挥的 Agent，而是一组版本化的 `WorkflowVersion`、`Run`、`Evidence`、`Evaluation` 和 `EvolutionProposal` 对象。
+LoopEvo 是通用 Agent 平台。持续信息情报是第一个端到端 case，不是产品边界。
 
-## 为什么需要它？
+## 为普通用户设计，而不是为流程专家设计
 
-现有工具通常只解决闭环的一部分：
+用户只需要理解：
 
-| 类别 | 擅长 | 常见缺口 |
+| 用户概念 | 含义 |
+| --- | --- |
+| **Agent** | 长期负责某类目标的 AI |
+| **Loop** | Agent 已经变成重复或持续运行的工作 |
+| **Activity** | Agent 正在做或已经做过什么 |
+| **Result** | 有来源或验证依据的可用输出 |
+| **Connection** | 对模型、数据源或交付目标的授权 |
+
+Workflow Revision、Run、Checkpoint、Evaluation 和 Policy Decision 仍在内部保证可靠性，但它们只是渐进式详情，不是使用产品的前置知识。
+
+## 本地私有或云端
+
+| 模式 | 适用场景 | 数据路径 |
 | --- | --- | --- |
-| 对话 Agent | 当前会话中的灵活推理 | 有效方法随会话消失 |
-| 自动化平台 | 可靠重复执行，并逐步支持 AI 辅助生成流程 | 信源策略、证据来源、固定版本 Run 和治理进化仍是各产品自定义能力 |
-| Agent 框架 | 强大的开发者基础能力 | 产品状态、证据、策略、评估和运营仍需自建 |
-| 垂直情报工具 | 开箱即用的领域数据 | 来源和方法很难迁移到其他目标 |
+| **本地私有桌面端** | 本地文件、浏览器、Coding Agent 和隐私敏感工作 | Agent、Run、Memory 和 Artifact 保存在设备；模型和 Source 请求由设备直达用户选择的 Provider；不要求 LoopEvo 云账号或同步。 |
+| **LoopEvo 云端** | 全天候监控和定时工作 | Run 与 Artifact 保存在用户云账号，由云端访问已授权 Provider。 |
 
-LoopEvo 聚焦缺失的一层：**从目标发现工作流，再让工作流可观测、可复现、可评估并可安全改进。**
+“本地私有”不等于断网或只使用本地模型。用户选择的 Prompt、文件片段和 Tool 结果可能直接发送给 OpenAI、Anthropic 或其他 Provider；LoopEvo 必须披露并限制范围。本地模型是未来选项，不是首期架构依赖。
 
-## 目标用户
-
-Phase 1 的首要用户是小型软件 / AI 产品团队中负责竞争与用户情报的产品或增长负责人。他们能判断信号质量并获得 Provider 授权，但不希望从 API、Cron、抓取器、Agent 框架或空白画布开始。
-
-技术创始人或工程负责人负责部署、Provider 与安全决策。扩展用户包括：
-
-- 将同一闭环用于研究或重复运营任务的研究人员和运营团队；
-- 管理共享工作流、凭据、预算和审批的管理员；
-- 开发 Connector、Skill、MCP Adapter、评估器和交付渠道的开发者；
-- 自托管核心并接入身份、秘密、审计和通知的平台团队。
-
-## 产品体验
-
-LoopEvo 使用 **对话作为控制面，持久视图作为事实面**：
-
-- **Conversation：** 表达目标、审查调研、授权能力和提出变更；
-- **Workflow：** 查看触发器、步骤、信源、能力、策略、预算和当前 Release；
-- **Runs：** 跟踪进度、等待、重试、失败、成本和恢复；
-- **Evidence：** 从结论回到原始内容、来源、时间、哈希和派生关系；
-- **Evaluations：** 对比质量、覆盖、时效、噪声、可靠性和成本；
-- **Approvals：** 审查权限、外部副作用、工作流 Diff、灰度和回滚点。
-
-流程图用于解释生成的工作流，不是默认起点。
+本地与云端默认独立。Agent 和 Workflow Revision 可以显式导出；Secret、Connection、文件、Memory、Run 和浏览器状态不会静默同步。
 
 ## 产品原则
 
-1. **Intent first, graph second：** 从结果开始，并解释推导出的工作流。
-2. **Workflow is the product：** 将有效方法沉淀为有类型、不可变、可调度的版本。
-3. **Evidence before confidence：** 每个重要结论和变更都指向来源与运行证据。
-4. **Deterministic by default：** 普通代码负责授权、采集、检查点、去重、重试、预算、审批和交付；Agent 负责判断。
-5. **Governed evolution：** Agent 提出版本，绝不静默改写生产工作流或代码。
-6. **Least capability：** 每次运行只获得声明的数据、工具、凭据和网络范围。
-7. **Cost is observable：** 新鲜度、覆盖、质量、延迟和费用共同优化。
-8. **Real vertical slices shape the platform：** 先完成主题情报闭环，再扩展框架抽象。
+1. **Agent first，按需 Workflow：** 一次任务直接运行；只有需要重复、调度、等待或恢复时才形成 Workflow。
+2. **外部简单，内部完整：** 用户概念保持少，内部保留 Revision、Run、Artifact、Capability、Memory、Policy 和 Evaluation。
+3. **授权范围内自动执行：** 只读、可逆、已授权工作不重复审批。
+4. **边界仍然存在：** 新凭据、私有范围、预算扩大、外部写入、删除和生产代码必须明确确认。
+5. **证据先于置信：** 重要结果和变更指向来源、运行数据或可重复评估。
+6. **进化是版本变更：** 低风险变更可自动评估、启用、观察和回滚，但权限和影响不能静默扩大。
+7. **先验证 case，再抽象平台：** 信息流先验证 Kernel，第二个无关 case 再验证通用 SDK。
 
 ## 架构方向
 
-Pi 是暂定的计划 Agent 运行时，Temporal 是暂定的计划持久工作流引擎，PostgreSQL 是计划中的产品事实源。Phase 0 Spike 必须先验证这些选择，依赖落地后才能成为实现事实。
+LoopEvo 使用一个可移植共享内核和两个运行宿主：
 
 ```mermaid
 flowchart TB
-    UX["Web / API / Delivery"] --> CTRL["Intent、Compiler、Registry、Policy"]
-    CTRL --> TEMP["Temporal Workflow Interpreter"]
-    TEMP --> PI["Pi Agent Worker"]
-    TEMP --> CAP["Connector / Browser / Delivery Workers"]
-    TEMP --> CODE["Sandboxed Coding Worker"]
-    DATA["PostgreSQL / Object Storage / Outbox"]
-    CAP --> DATA
-    CODE --> DATA
-    DATA --> EVAL["Evidence / Evaluation / Evolution"]
-    EVAL --> CTRL
-    TEMP --> OBS["OpenTelemetry / Audit / Cost"]
-    PI --> OBS
-    CAP --> OBS
+    K["共享 Kernel<br/>Agent / Revision / Activation / Run / Artifact<br/>Capability / Memory / Policy / Evaluation"]
+    K --> C["可选云端宿主"]
+    K --> L["本地私有宿主"]
+    C --> CF["Cloudflare Workers + Workflows"]
+    C --> PG["PostgreSQL via Hyperdrive + R2"]
+    L --> E["Electron + Node Local Host"]
+    L --> S["SQLite + 本地文件 + OS Keychain"]
+    CF --> P["Pi / Capability Executor"]
+    E --> A["Pi / Codex / 本地能力"]
 ```
 
 ### 关键边界
 
-- 一次 Pi Agent Step 是返回 `tool_request` 或 `final` 的推理 Activity；每个外部 Tool 由独立 Capability Activity 执行；
-- Temporal 保存恢复历史；PostgreSQL 保存可查询的产品状态、版本、采集检查点、证据、评估和审批；
-- 外部 I/O 在隔离的 Activity Worker 中通过版本化能力契约执行；Temporal Workflow 代码保持确定性；
-- 每次运行固定 Workflow、Capability、Prompt、Model、Connector 和 Policy 版本；
-- 优先使用事件、Webhook 或可靠增量 checkpoint，不默认固定轮询；
-- Coding Agent 在沙箱中生成待评审候选，运行中的工作流绝不热加载生成代码；
-- MVP 不并存两套 Agent Runtime 或两套 Workflow Engine，也不引入 Kafka、Kubernetes、多 Agent Supervisor 或完整拖拽画布。
+- Pi 是唯一原生 Agent Loop；Policy、持久 Run、Memory、Capability、Checkpoint 和 Artifact 由 LoopEvo 负责。
+- Codex 与 Claude 是完整外部 Agent，通过小 Adapter 委派，而不是嵌入 Pi。
+- Cloudflare Workflows 是首期唯一云端持久 Run 引擎；不同时引入 Agents SDK 或 Durable Objects 保存第二份 Session、Schedule 和恢复事实。
+- PostgreSQL 是云端业务事实源，SQLite 是本地事实源；运行时历史不是产品审计数据库。
+- 可移植 WorkflowRevision 通过 `Activation` 绑定 `local` 或 `cloud`，并固定所用 AgentRevision；导入另一端会创建独立 Activation。
+- 首期代码保持少量责任区，不为每个领域对象创建服务或包。
 
-计划中的核心技术：
+规划中的 Foundation：
 
 | 关注点 | 方向 |
 | --- | --- |
-| 语言与 UI | TypeScript、React / Next.js、Tailwind CSS、Radix primitives |
-| Agent 运行时 | 由 LoopEvo Adapter 封装的 `@earendil-works/pi-ai` 和 `@earendil-works/pi-agent-core` |
-| 持久执行 | Temporal TypeScript SDK |
-| 产品数据 | PostgreSQL、Postgres Outbox、S3 兼容对象存储 |
-| 能力 | Native Connector、Playwright、MCP TypeScript SDK、Skills、Webhooks |
-| 可观测 | OpenTelemetry 与可替换分析后端 |
+| 共享语言与 UI | TypeScript、React、Vite |
+| 原生 Agent | 由 LoopEvo Adapter 封装 Pi |
+| 本地宿主 | Electron、Node、SQLite WAL、本地 Artifact Store、OS Keychain |
+| 云端宿主 | Cloudflare Workers、Workflows、Hyperdrive、PostgreSQL、R2 |
+| 能力 | Native Adapter、MCP、Skills、受控浏览器与命令 |
+| 外部 Agent | Codex App Server；Claude API 或原生 Claude Code Companion |
 
-契约、数据流、Pi 包选择、安全、测试和部署边界见[系统架构](./docs/design/core/system-architecture.md)。
+持久执行、Policy、数据与 Adapter 边界见[系统架构](./docs/design/core/system-architecture.md)。
 
-## 旗舰用例：主题情报
+## 第一个垂直切片：自动信息流
 
 用户可以提出：
 
-> 持续跟踪 medo.dev、同类 AI 建站产品及其用户讨论；发现产品发布、设计趋势、功能诉求和抱怨；每天生成有引用的简报，高价值信号即时通知。
+> 持续跟踪 medo.dev、同类 AI 建站产品及其社区讨论；发现产品发布、设计趋势、功能诉求和抱怨；每天生成带来源简报，高价值信号及时通知。
 
-规划中的工作流将：
+Agent 应当：
 
-1. 发现品牌、竞品、品类词、社区、账号和权威站点；
-2. 解释每个来源的价值、访问方式、覆盖、费用和授权限制；
-3. 区分历史回填与增量采集；
-4. 使用事件、checkpoint、watermark、内容指纹和幂等键避免浪费与重复；
-5. 规范化、聚类、排序、分析并生成带引用的总结；
-6. 提供告警、简报、可搜索证据、Run Trace 和覆盖缺口；
-7. 根据反馈和真实结果提出信源、周期、过滤器与分析方式的改进。
+1. 发现竞品、关键词、账号、社区、Feed 和权威站点；
+2. 解释来源价值、授权、覆盖、费用和替代方案；
+3. 区分历史回填、事件和增量采集；
+4. 优先 Webhook、Stream、RSS 和可靠 Cursor，再使用自适应轮询；
+5. 规范化、去重、聚类、排序并生成带来源总结；
+6. 展示来源健康、覆盖缺口、告警和定期简报；
+7. 根据反馈改进低风险查询、过滤、摘要和周期。
 
-X 是 Alpha 必须支持的来源，接入必须通过官方 API、用户授权或合同有效的 Provider。RSS 和定向公开网页提供低成本基础覆盖；Reddit 和其他网络按真实价值、许可与成本加入，而不是承诺全平台覆盖。
+X 是 Alpha 必须验证的来源，接入方式必须是官方 API、用户授权或合同有效的 Provider。RSS 和定向公开网页提供低成本基础覆盖；Reddit、Bluesky、Facebook 和 Instagram 按真实价值、许可和成本加入，不承诺全平台覆盖。
 
-如流等公司专用交付方式位于开源核心之外，并实现同一个 Delivery Contract。
+如流等公司专用交付通过私有 Adapter 实现同一个 Delivery Contract，不进入开源核心的必选依赖。
 
-## LoopEvo 的差异
+## 低打扰自动化
 
-| 参照 | 主要资产 | LoopEvo 增加的能力 |
-| --- | --- | --- |
-| OpenClaw / Hermes | 持续存在、持续学习的 Agent | 版本化工作流、信源策略、证据、评估和受控晋升 |
-| Codex / Claude Code | 可验证的软件任务或可重用编码工作流 | 长期领域工作流、Provider 游标、持久 Run、质量与成本门槛 |
-| n8n / Dify | AI 辅助的自动化或 AI 应用 | 版本化信源策略、原始证据、固定版本 Run 和治理发布链 |
-| Gumloop | 带评估与反思的对话式自动化 | 可移植自托管契约、不可变 Release、来源追溯、Replay、Canary 和 Rollback |
+LoopEvo 追求 **零不必要打扰，而不是零边界**。
 
-一句话：**LoopEvo 让工作流，而不是 Agent，成为持续学习的长期单元。**
+在有范围、可撤销的 `PolicyGrant` 内，Agent 可以读取已授权数据、使用选定目录、模型、预算和交付目标，自动恢复失败，并应用经过验证的可逆改进。
+
+新凭据或私有数据、权限或预算扩大、新的外部写入目标、删除或付款、不可逆账号变更，以及生成代码的生产发布必须停止并请求用户确认。
+
+## 本地 Agent 集成
+
+- **Codex：** 规划使用官方 Codex App Server 与稳定 stdio JSONL。ChatGPT 认证由 Codex 管理，LoopEvo 不复制认证文件；`codex exec --json` 作为降级路径。
+- **Claude：** 正式后台路径使用受商业条款约束的 Claude Agent SDK 与 API Key 或支持的云 Provider。未取得 Anthropic 事先许可时，LoopEvo 不提供 Claude.ai 登录，也不消费 Free、Pro、Max 订阅；Companion 必须由用户在原生 Claude Code 中主动发起，不能通过后台 CLI 或代理驱动无人值守 Loop。
+- **ACP：** 等第二个真实外部 Agent 需要统一协议后再实现。
 
 ## 路线图
 
-路线图按证据门槛推进，不做日期承诺：
+1. **本地私有 Foundation：** 共享 Kernel、Electron Local Host、SQLite、Pi、API Key 模型 Connection、RSS Loop 和重启恢复。
+2. **云端信息流 Alpha：** Cloudflare Workers / Workflows、PostgreSQL / Hyperdrive、R2、X、RSS、定向 Web 和交付。
+3. **通用 Agent 验证：** 用第二个非信息流 case 验证 Kernel，并验证 Codex App Server，再冻结扩展 SDK。
+4. **可验证进化：** Evaluation、最小变更、Grant 内自动启用、监测和回滚。
+5. **受控 Coding Extension：** 通过 Codex 等可替换 Coding Agent 在沙箱生成候选能力。
+6. **开放生态与团队：** 只在核心契约和治理经过真实使用后建设。
 
-1. **Foundation：** 本地目标 → 版本 → 持久 Run → Evidence 最小骨架；
-2. **Topic Intelligence Alpha：** RSS、定向 Web、一个授权 X Provider、增量采集、引用简报和 Webhook 交付；
-3. **Reusable Workflow Core：** 稳定 Schema、Connector SDK、触发、策略、Dry Run、Replay 和自托管运维；
-4. **Governed Evolution：** 数据集、Diff、离线评估、审批、灰度、晋升和回滚；
-5. **Sandboxed Coding Extension：** 可替换 Coding Agent 生成经过评审的 Connector 和 Skill 候选；
-6. **Open Ecosystem & Teams：** 可信分发、团队治理以及 Managed / Self-host 之间的可移植性。
-
-完整范围、退出条件、指标和延后项见[路线图](./docs/plans/roadmap.md)。
+详见[完整路线图](./docs/plans/roadmap.md)和 [Foundation 实施计划](./docs/plans/foundation-implementation-plan.md)。
 
 ## 明确延后
 
-- 不受限制的抓取或所有社交网络覆盖；
-- 通用桌面 / 语音助理和几十个聊天渠道；
-- 完整可视编排器、Agent Teams 和公共市场；
-- 未经评审的 Workflow、Skill、Connector 或生产代码自修改；
-- 没有真实测量需求的 Kafka、Redis、Elasticsearch、Kubernetes 或独立向量数据库。
+- 本地模型下载、推理服务和 GPU 调度；
+- 全社交平台覆盖或不受限制的抓取；
+- 本地数据与凭据自动云同步；
+- 完整拖拽画布、多 Agent Supervisor 和公共市场；
+- 首版企业组织与 RBAC；
+- 尚未完成运行与运维设计前的独立多用户自托管宿主；
+- 没有真实需求前的 Cloudflare Agents SDK、Durable Objects、Queues、AI Gateway、Vectorize 和 Sandbox；
+- 没有证据前的 Kafka、Redis、Elasticsearch、Kubernetes 和独立向量数据库。
 
 ## 项目状态
 
 当前已有：
 
-- 已采纳的产品、架构、UI、参考项目、安全和路线图文档；
+- 已采纳的产品、架构、UI、参考、安全和路线图文档；
 - 中英文项目入口；
-- Apache License 2.0 与仓库知识库治理。
+- Apache License 2.0 和仓库知识库治理。
 
-当前尚未实现：
+尚未实现：
 
-- 应用、API、CLI、身份、数据库 Schema 或部署；
-- WorkflowSpec Compiler、Temporal Workflow、Pi Adapter 或 Worker；
-- 生产 Connector、Evidence Pipeline、Evaluation、通知或进化运行时。
+- Web、桌面端、API、身份、数据库和部署；
+- 共享 Kernel、本地 Run Ledger、Pi Adapter 和 Cloudflare 宿主；
+- 生产 Connector、外部 Agent Adapter、Evaluation 和进化运行时。
 
 ## 文档
 
@@ -196,19 +180,18 @@ X 是 Alpha 必须支持的来源，接入必须通过官方 API、用户授权�
 - [参考项目与差异化](./docs/design/core/reference-landscape.md)
 - [UI 设计体系](./docs/design/core/ui-design-system.md)
 - [产品与工程路线图](./docs/plans/roadmap.md)
+- [Foundation 实施计划](./docs/plans/foundation-implementation-plan.md)
 - [安全与数据治理](./docs/reference/security-and-data-governance.md)
 - [仓库上下文](./docs/reference/repository-context.md)
 
-## 参与贡献
+## 贡献
 
-LoopEvo 仍处于核心决策会显著影响产品的早期阶段。欢迎围绕产品批评、架构、工作流语义、连接器、评估、安全和开发者体验贡献。
+LoopEvo 仍足够早，核心决策很重要。提交代码前请阅读 [CLAUDE.md](./CLAUDE.md)、[docs/CLAUDE.md](./docs/CLAUDE.md)及相关事实源。不要把规划能力描述为已经实现，不要在没有第二个真实用途时增加抽象，也不要在未核验授权、条款、费用与删除方式时接入平台。
 
-提交代码前请阅读 [CLAUDE.md](./CLAUDE.md)、[docs/CLAUDE.md](./docs/CLAUDE.md) 和相关设计事实源。不得把规划能力描述为已经实现；新增平台集成前必须验证授权、条款、成本和删除模型。
+## 名称
 
-## 名称含义
+**Loop** 表示从目标到结果和改进的循环；**Evo** 表示基于证据、受边界约束的进化。
 
-**Loop** 表示从意图到证据再到改进的持续闭环；**Evo** 表示基于真实结果、受治理的进化。
-
-## 许可证
+## License
 
 [Apache License 2.0](./LICENSE)

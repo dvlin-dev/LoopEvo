@@ -8,438 +8,427 @@ status: active
 
 ## 文档定位
 
-本文记录 LoopEvo 已采纳但尚未实现的架构边界，以及需要由 Phase 0 Spike 验证的暂定技术选择。产品定义见 `product-and-architecture.md`，竞品依据见 `reference-landscape.md`，验证门槛与交付顺序见 `../../plans/roadmap.md`。
+本文记录 LoopEvo 已采纳但尚未实现的架构边界，以及需要由 Foundation Spike 验证的技术选择。产品模型见 `product-and-architecture.md`，外部依据见 `reference-landscape.md`，执行门槛见 `../../plans/roadmap.md`。
 
-调研基线为 2026-08-01。外部项目版本、许可和托管能力会变化，真正引入依赖前必须重新核验并锁定版本。
+外部框架、服务能力、许可和条款会变化。真正引入依赖前必须重新核验并锁定版本。
+
+## 架构结论
+
+LoopEvo 采用 **共享内核 + 两个运行宿主**：
+
+- 共享内核保存可移植领域模型、事件、Policy 与 Capability 契约；
+- 云端宿主优先使用 Cloudflare Workers、Workflows、Hyperdrive 和 R2；
+- 本地宿主使用 Electron、Node、SQLite、本地文件系统和操作系统钥匙串；
+- Pi 是唯一原生 Agent Loop；Codex、Claude 等完整 Agent 通过 Adapter 委派，不伪装成 Pi 模型 Provider；
+- 两端共享语义与契约测试，不强求使用同一种数据库、调度器或沙箱。
+
+这能同时满足全天候云端执行和“不经过 LoopEvo 云端”的本地私有模式，又不把领域模型锁定在 Cloudflare 或桌面环境。
 
 ## 架构目标
 
-系统必须同时满足：
+- 自然语言目标可以直接执行，也可以在必要时沉淀为可解释的 Loop；
+- 短任务、定时任务和长等待在对应宿主故障后可恢复；
+- 每次 Run 固定 Agent、Workflow、Capability、模型和 Policy 版本；
+- 文件、来源、运行、费用、结果和变更可以追溯；
+- 用户在一个授权边界内尽量不被打断，边界外动作必须停止并请求授权；
+- 云端和本地可以独立使用，默认不依赖跨端同步；
+- 内核不泄漏 Pi、Cloudflare、Electron、模型或数据 Provider 的专有类型；
+- 先用最少部署单元打通真实 case，再由测量结果引入新基础设施。
 
-- 自然语言目标可以形成可审查的声明式工作流；
-- 秒级任务和跨天、跨月等待都能在进程故障后恢复；
-- 每次运行固定工作流、模型、能力、策略与凭据引用版本；
-- 原始证据、采集检查点、运行状态、费用与结论可以追溯；
-- Agent 只能在授权范围内判断和提案，不能绕过策略执行副作用；
-- 单机开发、自托管和未来托管版本共享核心语义；
-- 核心模型不泄漏 Pi、Temporal、模型或数据 Provider 的专有类型。
+## 核心技术决策
 
-## 核心决策
-
-架构职责与隔离原则是稳定设计；具体框架在 Spike 通过前属于 **provisional planned choice**，不得写入依赖或实现状态。
-
-| 决策 | 当前首选 | 理由 |
+| 关注点 | 已采纳方向 | 约束 |
 | --- | --- | --- |
-| 主语言 | TypeScript | Pi、Temporal SDK、Web 与连接器可共享类型和工具链 |
-| 产品形态 | 模块化单体 + 独立 Worker | 保持边界和故障隔离，不提前拆微服务 |
-| Web | React / Next.js | 支持官网、应用、服务端入口和流式交互；实现前再锁版本 |
-| Agent 内核 | Pi（暂定） | 复用模型适配、Agent Loop、工具调用、事件和上下文管理 |
-| 持久执行 | Temporal TypeScript SDK（暂定） | 跨进程恢复、Durable Timer、Signal / Update、Schedule 和版本化语义是核心需求 |
-| 产品事实源 | PostgreSQL | 保存项目、版本、运行投影、采集检查点、证据元数据、评估和审批 |
-| 大对象 | S3 兼容对象存储 | 保存原始响应、页面快照、附件和大体积派生产物 |
-| 领域事件 | PostgreSQL Outbox | 保证产品写入与事件发布一致；没有规模证据前不引入 Kafka / NATS |
-| 浏览器 | Playwright Worker | 确定性浏览器能力；优先级低于官方 API 和授权 Connector |
-| MCP | 官方 TypeScript SDK + 权限代理 | MCP 是能力协议，不是权限边界 |
-| 可观测 | OpenTelemetry | 用开放协议关联 Workflow、Run、Agent、Tool、成本和审批 |
-| UI 基础 | Tailwind CSS + Radix primitives | 快速建立一致 Token、无障碍基础与可维护组件；不复制 Wegic 资产 |
+| 语言 | TypeScript | 共享 Schema、事件、UI 和 Adapter；版本在脚手架阶段锁定 |
+| UI | React + Vite | Web 与 Electron Renderer 尽量复用；不为营销页引入第二套框架 |
+| 原生 Agent | Pi | 先验证 Node 与 Workers 兼容性；通过 LoopEvo Adapter 隔离 |
+| 云端执行 | Cloudflare Workflows | 唯一云端持久 Run 引擎，负责等待、重试和恢复 |
+| 云端入口 | Cloudflare Workers + Static Assets | 一个应用承载 Web、API、SSE、Webhook 和中心调度入口 |
+| 云端事实源 | PostgreSQL via Hyperdrive | 唯一业务事实源；Alpha 使用关闭查询缓存的 Binding，Workflows 状态不是长期审计库 |
+| 云端大对象 | R2 | 保存原始页面、附件、截图和大 Artifact；小结果可直接存数据库 |
+| 本地桌面 | Electron | Main 只管理窗口与受控 IPC；`utilityProcess.fork` 启动 Local Agent Host |
+| 本地事实源 | SQLite WAL + 文件系统 | SQLite 保存结构化事实，内容寻址文件保存大 Artifact |
+| 本地秘密 | OS Keychain | 不复制 Codex / Claude 自身凭据，不在 SQLite 明文保存 Secret |
+| 能力 | Native Adapter、MCP、Skills、浏览器与受控命令 | Capability 是权限边界，Skill 不是权限 |
+| 观测 | 结构化 Domain Event，后续映射 OpenTelemetry | OTel 不是领域事实源 |
 
-### 为什么暂定 Temporal，而不是 Trigger.dev
-
-LoopEvo 的核心是持久、可等待、可审批、可恢复和可版本化的长期工作流。Temporal 的 Event History、Durable Timer、Signal / Update 和 Schedule 直接对应这些语义，开源自托管与托管形态保持同一核心模型。它的学习和运维成本更高，但这是核心复杂度，不是为未来规模预建。
-
-[Trigger.dev](https://trigger.dev/docs) 的 TypeScript 开发体验、Dashboard 和 Realtime 很适合快速后台任务；但其[自托管说明](https://trigger.dev/docs/self-hosting/overview)与托管能力并不完全等价。LoopEvo 不同时维护两套执行引擎，也不让产品领域模型依赖任一运行时。只有产品目标改为“托管优先的短任务自动化”时才重新评估。
-
-Phase 0 必须用同一条 Timer、Signal、Activity Retry、Worker Restart 和版本重放链路验证 Temporal。若无法满足 `roadmap.md` 的通过条件，只用 `WorkflowRuntimePort` 对 Trigger.dev 做一次同负载备选验证；最终仍只选择一个运行时。
-
-### 为什么不再引入 LangGraph / Mastra
-
-若 Pi 通过 Phase 0 Spike，它将承担唯一 Agent Loop；此时再引入第二套 Agent 状态、Tool 和 Memory 抽象会制造冲突。我们只借鉴 LangGraph 的 checkpoint / interrupt、Mastra 的开发体验，由所选 Workflow Runtime 与 LoopEvo 领域契约实现对应能力。
+暂不进入首版：Cloudflare Agents SDK、Durable Objects、Queues、AI Gateway、Vectorize、独立消息系统、Kubernetes、微服务拆分和完整工作流画布。
 
 ## 逻辑架构
 
 ```mermaid
 flowchart TB
-    subgraph UX["体验层"]
-        WEB["Web：Chat / Workflow / Runs / Evidence"]
-        API["API / Webhook"]
-        DELIVERY["通知与审批渠道"]
+    subgraph SHARED["共享内核"]
+        DOMAIN["Agent / Revision / Activation / Run / Artifact"]
+        POLICY["PolicyGrant / Decision / Budget"]
+        CONTRACT["Capability / Runtime / Event Contracts"]
+        EVAL["Evaluation / ChangeSet"]
     end
 
-    subgraph CONTROL["控制层"]
-        INTENT["Intent & Research Planner"]
-        COMPILER["Workflow Compiler"]
-        REGISTRY["Version / Release Registry"]
-        POLICY["Policy / Approval / Budget"]
-        SOURCE["Source & Capability Registry"]
+    subgraph CLOUD["云端宿主（可选）"]
+        WORKER["Workers + Static Assets"]
+        WF["Cloudflare Workflows"]
+        PG["PostgreSQL via Hyperdrive"]
+        R2["R2"]
+        CEXEC["Pi Executor / Capability Adapter"]
     end
 
-    subgraph RUNTIME["持久执行层"]
-        DISPATCH["Outbox Dispatcher"]
-        TEMPORAL["Temporal Workflow Interpreter"]
-        AGENT["Pi Agent Worker"]
-        CAPWORKER["Capability Workers"]
-        CODER["Sandboxed Coding Worker"]
+    subgraph LOCAL["本地私有宿主"]
+        DESKTOP["Electron Renderer"]
+        DAEMON["Node Local Host"]
+        SQLITE["SQLite WAL"]
+        FILES["Local Artifact Store + Keychain"]
+        LEXEC["Pi / Codex / Local Capabilities"]
     end
 
-    subgraph DATA["数据与证据层"]
-        PG["PostgreSQL"]
-        OBJ["Object Storage"]
-        BROKER["Credential Broker"]
-        SECRET["Secret Manager"]
-        OUTBOX["Outbox / Run Projection"]
-    end
-
-    subgraph GOV["治理与观测"]
-        AUDIT["Audit / Provenance"]
-        OTEL["OpenTelemetry"]
-        EVAL["Evaluation / Replay / Canary"]
-    end
-
-    WEB --> INTENT --> COMPILER --> REGISTRY
-    API --> REGISTRY
-    DELIVERY --> API
-    REGISTRY --> POLICY
-    SOURCE --> COMPILER
-    POLICY --> PG
-    PG --> OUTBOX
-    OUTBOX --> DISPATCH --> TEMPORAL
-    OUTBOX --> WEB
-    TEMPORAL --> AGENT
-    TEMPORAL --> CAPWORKER
-    TEMPORAL --> CODER
-    AGENT --> SOURCE
-    CAPWORKER --> SOURCE
-    REGISTRY --> PG
-    CAPWORKER --> PG
-    CAPWORKER --> OBJ
-    CAPWORKER --> DELIVERY
-    CAPWORKER --> BROKER --> SECRET
-    CODER --> BROKER
-    TEMPORAL --> OTEL
-    AGENT --> OTEL
-    CAPWORKER --> OTEL
-    PG --> AUDIT
-    PG --> EVAL --> POLICY
+    SHARED --> CLOUD
+    SHARED --> LOCAL
+    WORKER --> WF --> CEXEC
+    WORKER --> PG
+    WF --> PG
+    CEXEC --> PG
+    CEXEC --> R2
+    DESKTOP --> DAEMON --> LEXEC
+    DAEMON --> SQLITE
+    DAEMON --> FILES
 ```
 
-### 边界说明
+### 稳定边界
 
-- **控制层** 决定允许执行什么；它保存版本、策略、预算和审批，不执行外部副作用。
-- **Temporal** 解释固定的 `WorkflowVersion`，负责状态、等待、重试、超时和恢复；不作为产品查询数据库。
-- **Pi Agent Worker** 负责调研、规划、分类、综合和变更提案；一次 Agent Step Activity 只返回 `tool_request` 或 `final`，不在内部执行外部副作用。
-- **Capability Worker** 将每个获批 Tool Request 作为独立 Activity 执行 API、RSS、浏览器、存储和通知；外部 I/O 本身可以非确定，Temporal Workflow 代码必须保持确定。
-- **Coding Worker** 拥有独立沙箱和发布门禁；生成代码不会被运行中的工作流热加载。
-- **Outbox Dispatcher** 至少一次消费 Outbox，以稳定 `runId` 作为 Temporal Workflow ID 启动运行，并把启动结果写回投影。
-- **PostgreSQL** 是产品事实源；Temporal Event History 是执行恢复事实，不替代产品数据和审计投影。
+- **共享内核** 只定义业务语义和端口，不引用 Cloudflare、Electron 或 Provider SDK。
+- **宿主** 负责调度、持久化、秘密、沙箱、网络和进程生命周期。
+- **Pi** 负责推理与 Tool 选择，不拥有业务授权、持久 Run、Checkpoint 或产品 Memory。
+- **Capability Executor** 执行 Pi 请求的 Tool；完整外部 Agent 委派本身作为受控 Capability，在限定 Workspace / Sandbox 内运行并把内部审批映射到 Policy。
+- **PostgreSQL / SQLite** 分别是对应云端或本地宿主的唯一业务事实源。
+- **Artifact Store** 保存大对象；数据库保存哈希、来源、类型、大小、保留和访问策略。
+- **UI** 只读取领域投影，不把聊天消息或 Agent 内部事件当最终事实。
 
-## 关键运行链路
+## 最小实现边界
 
-```mermaid
-sequenceDiagram
-    actor U as User
-    participant P as Pi Planner
-    participant C as Control API / Compiler
-    participant D as PostgreSQL
-    participant O as Outbox Dispatcher
-    participant T as Temporal
-    participant W as Capability Worker
-    participant E as Eval / Approval
-
-    U->>C: 描述长期目标
-    C->>P: 执行受控 Planner
-    P-->>C: 返回 Goal / Source Proposal / Draft
-    C->>D: 保存调研证据与 Workflow Draft
-    C-->>U: 展示信源、成本、权限与缺口
-    U->>C: 接受方案并授权
-    C->>C: Schema / Capability / Policy 校验
-    C->>D: 写入不可变 WorkflowVersion + Outbox
-    O->>D: 至少一次领取 Outbox
-    O->>T: Start(workflowId = runId)
-    O->>D: 写回启动结果并对账
-    T->>W: 执行增量采集 Activity
-    W->>D: 幂等写入 Evidence 与 checkpoint
-    W-->>T: 返回证据引用
-    T->>P: 执行 Agent Step Activity
-    P-->>T: tool_request 或 final
-    alt tool_request
-        T->>W: 执行 Policy / Budget Check Activity
-        W-->>T: allow / approval_required / deny
-        opt approval_required
-            T->>W: 持久化 ApprovalRequest Activity
-            W->>D: 写入待审批投影
-            T-->>U: 展示 ApprovalRequest
-            U->>C: 提交 ApprovalDecision
-            C->>D: 持久化决定
-            C->>T: 发送 Approval Signal
-        end
-        T->>W: 单独执行获批 Capability Activity
-        W-->>T: 返回可持久化 Tool Result
-        T->>P: 带 Tool Result 继续下一步
-    else final
-        T->>W: 持久化 final、成本与 Trace 引用
-    end
-    T->>W: 执行 Delivery / Run Projection Activity
-    W-->>U: 交付结果
-    D->>E: 触发评估与反馈聚合
-    E-->>U: 展示候选版本 Diff
-    U->>E: 审批、灰度或拒绝
-```
-
-## WorkflowSpec 与版本模型
-
-`WorkflowSpec` 是声明式领域模型，具体 JSON Schema 在 Foundation 阶段通过测试固化。最小语义包括：
-
-- `intent`：目标、范围、成功标准与禁止事项；
-- `triggers`：manual、event、webhook、schedule、adaptive wake-up；
-- `graph`：有类型输入输出的步骤与依赖；
-- `capabilities`：精确版本、权限、网络范围和 Credential Reference；
-- `state`：游标、watermark、checkpoint、去重键和保留规则；
-- `policies`：审批、数据、风险、超时、重试、并发和停止条件；
-- `budgets`：模型、Provider、浏览器、运行次数和总成本上限；
-- `evaluation`：确定性断言、数据集、质量与成本门槛；
-- `delivery`：输出格式、渠道、聚合周期和敏感信息策略。
-
-版本规则：
-
-1. Draft 可编辑，发布后生成不可变 `WorkflowVersion`。
-2. `Release` 指向 active、candidate、canary 和 rollback target。
-3. `Run` 启动时固定 Workflow、Capability、Prompt、Model、Policy 与 Connector 版本快照。
-4. 运行中的版本不接受结构修改；新需求产生新 Draft。
-5. Schema 变更必须有显式版本和向前迁移策略。
-
-Temporal 只运行一个受控的通用解释器，不为每个用户工作流生成并部署任意 Workflow 代码。所有网络、时间、随机和外部 I/O 都放在 Activity 中，保证 Workflow 重放确定性。
-
-周期监控默认“每次采集一个有限 Run”，长期进度由 PostgreSQL checkpoint 与下一次 Schedule 衔接，避免无限增长的 Event History。确需长期等待的审批或订阅 Workflow 必须设置历史上限并使用 Continue-As-New。部署采用 Temporal Worker Versioning / Build ID：在已有 Run 完成或 Continue-As-New 前保留兼容 Worker，并用历史 Replay 阻止非确定性发布。
-
-## Pi 集成基线
-
-Pi 已从 `badlogic/pi-mono` 迁移到 [earendil-works/pi](https://github.com/earendil-works/pi)。截至调研基线，最新正式版本为 `v0.83.0`，仍处于 `0.x` 并快速变化。实现时必须重新核验，精确锁版本，不使用 caret 范围，并通过 Adapter 隔离类型。
-
-| Pi 包 | 决策 | LoopEvo 用途 |
-| --- | --- | --- |
-| [`@earendil-works/pi-ai`](https://github.com/earendil-works/pi/tree/main/packages/ai) | 若采用 Pi 则必选 | 多模型、流式输出、Tool Schema、Token 与成本信息；封装在 `ModelRuntimePort` 后 |
-| [`@earendil-works/pi-agent-core`](https://github.com/earendil-works/pi/tree/main/packages/agent) | 若采用 Pi 则必选 | Agent Loop、工具执行、事件、steer / follow-up、上下文和 Session；封装在 `AgentRuntimePort` 后 |
-| [`@earendil-works/pi-coding-agent`](https://github.com/earendil-works/pi/tree/main/packages/coding-agent) | 条件采用 | 独立 Coding Worker；不得进入控制面或直接发布生成模块 |
-| `@earendil-works/pi-storage-sqlite-node` | 仅本地 | CLI、开发和单机演示的 Pi Session；不能成为产品数据库 |
-| `@earendil-works/pi-tui` | 不采用 | Web 是主产品；未来 CLI 再评估 |
-| `@earendil-works/pi-protocol` / `@earendil-works/pi-client` / `@earendil-works/pi-server` | 暂不采用 | 调研时仍属实验性或未发布能力，不作为 MVP 远程协议 |
-
-Pi 可以直接提供模型适配、Tool Calling、事件、上下文压缩、分支和 Agent 控制；Pi 不提供 LoopEvo 所需的产品权限、MCP 权限代理、持久业务工作流、多租户审批和 OS 沙箱。
-
-必须自研的稳定端口：
-
-```ts
-interface AgentRuntimePort {
-  step(input: AgentStepInput): Promise<AgentStepResult>;
-  abort(agentRunId: string): Promise<void>;
-}
-
-interface WorkflowRuntimePort {
-  start(runId: string, versionId: string): Promise<RunHandle>;
-  signal(runId: string, signal: WorkflowSignal): Promise<void>;
-  cancel(runId: string, reason: string): Promise<void>;
-}
-```
-
-`AgentStepResult` 只能是带 Session 引用的 `tool_request` 或 `final`。Temporal 收到 Tool Request 后先检查 Policy、Budget 和 Approval，再把单个 Tool 调度为 Capability Activity；Activity 结果持久化后作为下一次 `AgentStepInput` 继续 Pi。只有不访问外部状态、无费用且无副作用的纯上下文变换可以留在 Agent Activity 内。
-
-Pi Event 必须映射为 LoopEvo Domain Event；Pi Tool 只能由 Capability Manifest 转换生成。Web API、数据库和 WorkflowSpec 不得暴露 Pi 类型。Pi 的 `beforeToolCall` 只做最后一道拦截，不能成为权限事实源；Phase 0 Spike 必须证明 Pi 可以在 Tool 真正执行前暂停并安全恢复，否则拒绝当前集成方式。
-
-## 能力与 Connector 契约
-
-每个 `Capability` 声明：
-
-- 唯一 ID、语义版本、来源、许可、校验值和维护者；
-- 有类型的输入、输出和错误；
-- 文件、进程、网络、数据和 Credential 权限；
-- 费用、延迟、并发、限流、超时和重试语义；
-- 是否产生副作用、是否幂等、需要哪类审批；
-- 健康检查、契约测试、数据保留和卸载方式。
-
-Source Connector 额外实现：
-
-| 操作 | 语义 |
-| --- | --- |
-| `discover` | 探测账号、Feed、搜索能力、字段、历史深度和覆盖限制 |
-| `validate` | 验证授权、配额、区域、查询与成本，不写业务数据 |
-| `backfill` | 按明确窗口回填历史，不与增量 checkpoint 混用 |
-| `collect` | 从 `durableCheckpoint` 扫描增量；逐页返回 `scanPageToken` 与 `upsert / delete` change event |
-| `subscribe` | Provider 支持时注册 Webhook / Stream，并验证事件签名 |
-| `unsubscribe / revoke` | 停止订阅、撤销连接并清理受控凭据 |
-| `reconcile` | 可选周期对账，用于发现乱序更新、删除、漏事件和 Webhook 失效 |
-| `health` | 暴露授权失效、限流、覆盖下降和 Provider 状态 |
-
-规范化项目至少包含 Provider Object ID、canonical URL、作者、发生时间、采集时间、正文或摘要、内容哈希、原始对象引用、来源与 checkpoint。删除使用 tombstone 保留来源、删除时间和审计，不继续暴露受限正文。
-
-唯一约束使用 `(connector_instance_id, provider_object_id, revision)`，其中 `revision` 必须非空；Provider 没有 revision 时使用规范化内容哈希。内容哈希同时用于跨来源和更新去重，但不能替代 Provider ID。
-
-## 增量采集与成本控制
-
-优先顺序：事件 / Webhook / Stream → 可靠 incremental checkpoint → 自适应轮询 → 固定轮询。checkpoint 分为两层：
-
-- `inProgressScanCheckpoint`：仅属于当前 Run，逐页保存 `scanPageToken`、已落盘页和预算，用于崩溃恢复；
-- `durableCheckpoint`：跨 Run 使用，可以是 Provider cursor、since-id 或 `(occurredAt, providerObjectId)` 复合 watermark，只在整轮成功后推进。
-
-短期 page token 失效时，从已提交 durable checkpoint 使用重叠窗口重扫，并依赖 Provider ID / revision 幂等去重。每个 Source 独立保存：
-
-- 已提交 checkpoint、事件 watermark 和最大观察时间；
-- `lastSuccessAt`、`nextCheckAt`、退避、配额和覆盖健康；
-- 查询窗口、重叠窗口和 late-arrival 策略；
-- 单次与周期预算、最大页数和停止条件。
-
-同一 Source 的采集必须 single-flight。Run 开始前以 `sourceId` 获取带租期的 Lease，并分配单调递增的 `scanGeneration` 作为 fencing token；调度器发现已有有效 Lease 时合并为一次待补扫，而不是启动第二轮 Provider 调用。原 Run 只可在持有同一 generation 时续租。取消或超时会令 Lease 失效；接管者必须在事务中递增 generation，旧 Run 即使随后恢复也不得继续写入。
-
-每页处理顺序必须是：验证响应 → 持久化原始证据与 change event → 幂等写入规范化项目 → 保存下一页 `inProgressScanCheckpoint`。页内状态按 `(sourceId, runId, scanGeneration)` 隔离；所有写入都校验当前 Lease。整轮完成后，使用“预期旧 checkpoint 版本 + 当前 fencing token”的 CAS 原子推进 `durableCheckpoint`，再释放 Lease 并清除本轮状态。陈旧 Run 的 CAS 必须失败，且不得释放新 Lease、删除新 Run 状态或覆盖较新的 checkpoint。失败重试不得越过已提交 checkpoint，也不得因摘要失败重复读取已经保存的上游结果。Provider 不支持幂等请求时只能通过预算预留、请求回执和有限重试降低重复计费，并明确剩余风险。
-
-## 数据与一致性
-
-### PostgreSQL
-
-保存租户与项目、Workflow Draft / Version / Release、Capability / Source、Run / Step 投影、Checkpoint、Evidence 元数据、分层 Memory、Evaluation、Approval、Feedback、Audit 和 Outbox。
-
-初期使用 PostgreSQL Full Text Search 和可选 `pgvector` 满足搜索与语义召回；没有真实查询瓶颈前不引入 Elasticsearch 或独立向量数据库。
-
-Memory 分层存储：用户偏好、Project 知识、Evidence 派生事实、Source Checkpoint、Pi Session 和 WorkflowSpec 使用不同表与保留策略。每条长期 Memory 带作用域、来源、创建依据、时效、冲突状态和可删除性；Memory 不能表达权限或覆盖工作流版本。
-
-### Object Storage
-
-保存 Provider 原始响应、页面快照、附件、导出、评估数据集和大模型产物。数据库只保存不可变对象引用、哈希、媒体类型、大小、保留期和访问策略。
-
-对象存储与 PostgreSQL 无法原子提交。Artifact 使用 `pending → available` 状态：先预留稳定对象键并上传，校验内容哈希后在数据库事务中标记 available、写入 Evidence 并推进该页 `inProgressScanCheckpoint`。崩溃后按对象键和哈希继续；后台清理超时 pending 行与孤儿对象。任何引用对象不可读时都不能推进页内或跨轮 checkpoint。
-
-### 一致性与幂等
-
-所有副作用使用稳定键：
+首版保持五个代码责任区，不预先拆大量包：
 
 ```text
-tenantId + workflowVersionId + runId + stepId + effectId
+apps/desktop          Electron UI 与本地 Host
+apps/cloud            Worker UI/API、Workflows 与云端 Adapter
+packages/kernel       领域 Schema、Policy、事件与宿主端口
+packages/runtime-pi   Pi Adapter 与统一 Agent Event
+cases/info-flow       RSS / Web / X、分析、摘要与交付
 ```
 
-`effectId` 在所有物理 Activity Retry 中保持不变；只有经批准的新业务执行或显式补偿才产生新值，Activity attempt 只进入 Trace。通知等外部副作用还要保存 Provider 回执，同一逻辑交付键只允许一个用户可见结果。
+共享 UI 在第二个宿主真正复用时再从应用中提取；Connector SDK、ACP Adapter、Evaluation SDK 和独立 Worker 包也遵循“第二个真实实现后再抽象”。逻辑边界必须清楚，但不等于每个概念都要成为部署服务或 npm 包。
 
-PostgreSQL 写入与 Outbox 在同一事务完成。Dispatcher 至少一次投递，以 `runId` 作为 Temporal Workflow ID；Already Started 视为幂等成功，已结束 ID 不重用。成功启动后写回投影，并由对账任务处理 Outbox、Temporal 和 Run 投影差异。Worker 重试必须先查询幂等结果，不从 UI 猜测状态。
+## 运行模型
 
-## Agent、确定性代码与 Coding Agent 的边界
+### 一次任务与 Loop
 
-| 任务 | 执行者 |
+Session 可以用 `Agent.activeAgentRevisionId` 直接启动一次 Run。只有任务需要重复、调度、事件触发、跨进程等待或稳定恢复时，才生成固定引用 `agentRevisionId` 的 `WorkflowRevision`；`Activation` 只激活 WorkflowRevision。
+
+```text
+Session
+├── one-shot Run
+└── WorkflowRevision → Activation(local | cloud) → many Runs
+```
+
+Revision 是可导出的定义，Activation 是 Workflow 的目标相关部署状态。一个 WorkflowRevision 可以在不同设备或云端产生独立 Activation，系统不虚构跨断开环境的全局 Lease。Loop 改变 Agent Instructions 时，同时生成新 AgentRevision 和引用它的新 WorkflowRevision。
+
+### Run 生命周期
+
+```text
+queued → running → waiting → running → succeeded
+                  ├───────────────→ failed
+                  ├───────────────→ cancelled
+                  └───────────────→ policy_blocked
+```
+
+这张图只描述 `Run.executionStatus`。云端派发另有 `Run.dispatchStatus = pending | dispatched | reconcile_required`，不能混入执行状态；本地 Run 不需要该字段。`Step` 使用自己的 `pending | running | waiting | succeeded | failed | cancelled`。外部副作用结果属于 `EffectReceipt.status = in_flight | succeeded | failed | delivery_unknown | compensated`；`delivery_unknown` 会让当前 Step 和 Run 以明确错误码失败并等待人工对账，不是 Run 状态，也不能自动重放。
+
+Run 启动时固定：
+
+- `agentRevisionId` 与可选 `workflowRevisionId`；
+- 可选 `activationId`、触发原因与目标宿主；一次性 Run 没有 Activation；
+- Capability、Skill、Prompt、Model 和 PolicyGrant 版本；
+- 输入 Artifact、预算、超时、重试和保留策略。
+
+每个外部副作用使用稳定 `effectId`，但系统只能达到 Provider 声明的保证级别。支持幂等键或可查询回执时可以安全自动重试；结果未知且 Provider 两者都不支持时，将 Effect Receipt 标为 `delivery_unknown`，当前 Step / Run 失败并停止重放。Run、Step、Artifact 和 Effect Receipt 进入宿主事实库；执行引擎内部历史只用于恢复。
+
+## 云端宿主
+
+### 首版拓扑
+
+```text
+Cloudflare Workers + Static Assets
+├── Web / API / SSE / Webhook
+├── 一个中心 Schedule Tick
+├── Cloudflare Workflows：持久 Run、等待、重试、恢复
+├── PostgreSQL via Hyperdrive：唯一业务事实源
+├── R2：大 Artifact 与原始证据
+└── Pi / Capability Executor：Workers 内或经验证的 Container Adapter
+```
+
+Cloudflare Workflows 是唯一云端 Run 引擎。Cloudflare Agents SDK、Durable Object Alarm 和其他调度器不得同时拥有业务 Session、Memory、Schedule 或恢复状态。
+
+### 调度
+
+不为每个 Loop 创建独立 Cron：
+
+1. 一个 Worker Cron 周期性领取 PostgreSQL 中到期的 Activation；
+2. 使用 `FOR UPDATE SKIP LOCKED` 有界、公平地领取；同一事务插入唯一 `(activationId, scheduledFor)`、`executionStatus = queued`、`dispatchStatus = pending` 的 Run，并推进 `nextRunAt`；
+3. 事务外以该 `runId` 创建 Workflows 实例，成功后写入 `workflowInstanceId / dispatchedAt`；
+4. 后续 Tick 重试过期且 `dispatchStatus = pending` 的记录；不确定结果先转 `reconcile_required` 并查询实例，不能盲目创建；PostgreSQL 唯一约束负责永久逻辑幂等，Workflow ID 只负责实例保留期内去重；
+5. `already exists` 只有在对账确认属于同一 Run 后才视为成功；
+6. 每个外部副作用使用 `runId + stepId + effectId` 去重。
+
+Tick 必须限制单次领取量和运行时间，并记录 backlog、最老待执行时间、用户公平性、时区 / DST 与 catch-up 结果，不能无界扫描；截至调研基线，`createBatch()` 每批最多 100 个实例，实施时必须重新核验。事件和 Webhook 可以直接创建 Run，但必须校验签名、时间窗、重放 ID 与 Payload Schema，并经过相同幂等与 Policy 路径。Workflows 的短期状态保留不替代 PostgreSQL 的长期运行与审计记录。
+
+### Pi 执行位置
+
+Phase 1 前置 Spike 必须验证 Pi 在 Workers 运行时的包兼容，以及真实 `AgentRunWorkflow` 的持久恢复粒度。模型 Turn、Capability Request、Capability Result 与 Checkpoint 必须形成明确的 Workflows Step 边界；分别在模型返回后、Tool 执行前和 Tool 执行后注入失败并恢复。Workflow Payload 只传 ID，大内容进入 R2；Pi 状态必须转换为可持久化的 LoopEvo Runtime Checkpoint，而不是只保存在进程内。
+
+截至调研基线，Workflows 付费计划每 Step 默认 30 秒 CPU、可配置到 5 分钟，Payload 与普通 Step Result 上限 1 MiB，完成实例最多保留 30 天；实现 Spike 必须重新核验这些限制，并验证最大 Turn、R2 外置、429 退避和取消。验证结果只有两种：
+
+- 兼容：Pi Executor 直接运行在 Worker / Workflow Step；
+- 不兼容：使用 Cloudflare Container 或独立 Node Executor 实现同一个 `AgentRuntimeAdapter`，但仍由 Workflows 驱动，不形成第二个 Run 引擎。
+
+不得为了提前兼容两条路径同时构建两套生产 Executor。
+
+### 按需增加的 Cloudflare 能力
+
+| 能力 | 何时增加 |
 | --- | --- |
-| 目标理解、首次调研、信源建议、语义分类、综合与变更提案 | Pi Agent |
-| Schema 校验、授权、检查点、抓取、解析、去重、重试、预算、审批、通知 | 确定性代码 |
-| 缺失 Connector / Skill 的候选实现 | 隔离 Coding Agent |
+| Browser Run | 官方 API、RSS 和静态 HTTP 不足，且页面访问被允许 |
+| Sandbox / Containers | Pi 兼容 Spike 明确需要，或首次允许云端运行用户 / 模型生成代码 |
+| Queues | 出现真实采集突发、扇出或独立投递重试需求 |
+| AI Gateway | 需要多 Provider 路由、统一限流、缓存或跨模型成本治理 |
+| Durable Objects | 出现多客户端 WebSocket Presence 或单写者协调需求 |
+| Vectorize | 固定检索评测证明 PostgreSQL 搜索无法满足需求 |
 
-默认使用单 Agent + 工具。只有任务可以安全并行、上下文隔离有明确收益时才启用子任务；子任务只返回结构化摘要和证据引用。
+若引入 Durable Objects，其状态只能是可重建的连接态或缓存；PostgreSQL 仍是业务事实源。Cloudflare Container 自身要求的 Durable Object Binding 属于基础设施例外，也不得保存 Session、Schedule 或业务事实。Container Spike 还必须验证冷启动、取消、并发、健康和成本。若引入 AI Gateway，默认关闭 Prompt / Response Payload 日志。
 
-Coding Agent 只能在临时分支或沙箱中：生成代码、运行定向测试和 Eval、产出 Diff / 权限 / 依赖 / 许可证报告。通过人工评审、扫描、签名和发布后，新版本才进入 Capability Registry；禁止运行时热加载候选代码。
+## 本地私有宿主
 
-## 评估与受治理进化
+### 进程边界
+
+```text
+Electron Renderer（无 Node、无文件和进程权限）
+        │ typed preload API
+Electron Main（窗口、生命周期、Keychain、IPC 路由）
+└── Utility Process（`utilityProcess.fork`）：Local Agent Host
+    ├── Scheduler / Run Ledger
+    ├── Policy / Capability Executor
+    ├── SQLite WAL
+    ├── Content-addressed Artifact Store
+    └── OS Keychain / Provider-owned credentials
+```
+
+Renderer 只加载打包资源，开启 Context Isolation 与 Sandbox，关闭 Node Integration，保持 `webSecurity`，配置 CSP，并禁用 `webview`、未授权导航和新窗口。所有 IPC 校验 sender / frame、Origin 与输入 Schema；preload 不暴露通用 `exec`、任意路径读取或原始 Electron API，Secret 永不返回 Renderer。外链只允许明确协议和域名。
+
+Electron Main 只管理窗口、生命周期、Keychain 与 IPC 路由；首版固定使用 Electron `utilityProcess.fork` 启动 Local Agent Host，不并行维护 Child Process 路径。Host 根据 Capability Manifest 和 PolicyGrant 限制路径、域名、命令、资源与副作用，进程崩溃不能获得更大权限；只有 Spike 证明 Utility Process 无法满足已记录约束时，才以新决策替换实现。
+
+### 本地持久执行
+
+本地不复制 Cloudflare Workflows，而是实现最小 Run Ledger：
+
+- SQLite 保存 Trigger、`nextRunAt`、Run、Step、Attempt、Checkpoint 和 effect receipt；
+- 单进程 Scheduler 使用租约领取到期 Activation；
+- 每步完成后先持久化结果与下一状态，再继续执行；
+- 进程重启后从最近 Checkpoint 恢复；
+- 相同 `runId / effectId` 重放不会重复副作用；
+- 设备休眠或进程停止后不承诺准时执行，恢复时按 Policy 决定补跑或跳过。
+
+只有真实工作流证明需要更复杂的本地编排后，才评估额外引擎。
+
+### 数据边界
+
+- 默认不登录 LoopEvo 云端，不建立自动同步通道；
+- Agent、Memory、Run、Artifact 和本地索引只在设备；
+- 模型请求和信息源请求由设备直连相应 Provider；
+- UI 必须区分“发送给模型 Provider”和“上传到 LoopEvo 云端”；
+- 导出默认不含 Secret、Connection Token、本地路径内容和浏览器状态；
+- 删除覆盖 SQLite、Artifact、派生索引和可控缓存。
+
+本地模型不是首版依赖。当前只保留模型调用所必需的 Provider Adapter，不建设本地推理服务、模型下载器或 GPU 调度。
+
+## Agent Runtime
+
+### Pi：原生运行时
+
+Pi 提供模型适配、Agent Loop、Tool Calling、事件与上下文管理。LoopEvo 自己负责 Policy、持久 Run、Memory、Capability、Checkpoint、成本和沙箱。
+
+Pi 类型不能出现在领域 Schema、数据库或 UI 协议中。实现必须锁定经过验证的精确版本，并用夹具测试升级兼容。
+
+### 外部 Agent：委派而不是嵌套
+
+Codex 和 Claude Code 本身拥有 Agent Loop、工具、权限和 Session，不作为 Pi 的普通模型 Provider。LoopEvo 的 Adapter 方法不是上游原生 API，而是统一生命周期契约：
+
+```ts
+interface AgentRuntimeAdapter {
+  probe(): Promise<RuntimeStatus>;
+  start(input: RunInput): AsyncIterable<AgentEvent>;
+  resume(input: RuntimeResumeInput): AsyncIterable<AgentEvent>;
+  cancel(runId: string): Promise<void>;
+}
+
+type RuntimeResumeInput =
+  | { type: "capability_result"; runId: string; checkpoint: RuntimeCheckpoint; callId: string; result: CapabilityResult }
+  | { type: "policy_decision"; runId: string; checkpoint: RuntimeCheckpoint; requestId: string; decision: PolicyDecision };
+```
+
+Adapter 在首次启动、每个暂停点和完成前输出 JSON 可序列化、带版本的 `RuntimeCheckpoint`；Checkpoint 不包含 Secret，并能通过规范化 Runtime History 或 Provider Session ID 在进程重启后恢复。交互 Run 可引用发起它的产品 Session，计划 Run 不依赖产品 Session。Adapter 完成时只返回可序列化结果，由 Coordinator 写成带 Provenance 的 Artifact。未知上游事件进入脱敏 Runtime Telemetry；影响控制流的未知事件必须失败关闭，不能伪装成普通 Domain Event。
+
+首批方向：
+
+| Adapter | 定位 |
+| --- | --- |
+| `PiRuntimeAdapter` | LoopEvo 原生 Agent Loop |
+| `CodexAppServerAdapter` | 正式本地 Coding Agent / 受控文件与命令能力；使用官方 stdio JSONL |
+| `ClaudeApiAdapter` | 可选商业条款 Adapter；只使用用户 API Key 或 Anthropic 支持的云 Provider |
+
+Codex 委派本身是一项 Capability，运行在宿主限定的 Workspace、Sandbox 和网络范围内。App Server 的命令 / 文件审批请求映射为 LoopEvo Policy Decision，并通过 `policy_decision` 响应返回 Codex：Grant 内自动批准，越界 `ask / deny`。Codex 内部 Tool 由 Codex 自己在该 Sandbox 内执行，不伪装成 LoopEvo CapabilityResult，也不能默认使用 `danger-full-access` 或无条件批准。
+
+`CodexAppServerAdapter` 将 LoopEvo 生命周期映射到 App Server 初始化、`account/read`、由 Codex 管理的 ChatGPT / Device Code 登录、Thread、Turn、取消、账号变化与登出。LoopEvo 不读取或复制 `~/.codex/auth.json`，不注入实验性外部 Token，并用真实 `clientInfo` 标识自身。使用用户已安装 Codex 时先探测版本并检查受支持范围；只有 LoopEvo 自行分发二进制时才锁定精确版本。
+
+`codex exec --json` 只是受限功能降级，不假设具备 App Server 的双向审批和账号事件。它只能在安全 Sandbox 内运行兼容任务，并向上层暴露 degraded Capability。
+
+未经 Anthropic 事先批准，第三方不允许提供 Claude.ai 登录或路由 Free、Pro、Max 额度。Claude Agent SDK 受 Anthropic Commercial Terms 约束，采用前逐版本审查；正式后台路径只使用 API Key、Bedrock、Vertex 等允许方式。
+
+### 入站 Companion 与 ACP
+
+`ClaudeCompanionBridge` 不实现 `AgentRuntimeAdapter`。它只通过 MCP、Skill、Plugin 或安装入口，让用户在原生 Claude Code 中主动发起、观察和控制对 LoopEvo 的调用；不得通过 `claude -p`、后台代理或定时任务消费订阅，因此不能成为无人值守 Loop 的模型后端。
+
+ACP 是后续兼容协议；出现第二个真实外部 Agent 需求后再实现通用 Adapter。协议只解决通信，不扩大 Capability 或 Policy。
+
+## Capability、Skill 与 Connection
+
+每个 Capability Manifest 至少声明：
+
+- 稳定 ID、版本、来源、许可和维护者；
+- 有类型输入、输出和错误；
+- 可运行宿主：`local`、`cloud` 或两者；
+- 文件、进程、网络、数据和 Credential 范围；
+- 风险级别、费用、延迟、并发、超时与重试；
+- 是否产生副作用、重试模式、Provider Idempotency、Receipt 查询和补偿 Capability；这些是正交能力，不能压成一个互斥枚举；
+- 健康检查、契约测试、保留与删除语义。
+
+Skill 只提供方法和上下文；使用 Skill 不自动授予其描述的 Capability。Connector 是外部系统的实现，Connection 才是某位用户的授权实例。MCP 也是能力协议，必须经过同一个 Manifest、Policy 和沙箱代理。
+
+## Policy 与低打扰自动化
+
+Policy 决策顺序：
+
+```text
+宿主沙箱可达
+→ Capability 已声明
+→ Connection 有效
+→ PolicyGrant 覆盖 subject、action、resource、destination、数据用途 / 保留、目标宿主、预算窗口、有效期与撤销状态
+→ allow / ask / deny
+```
+
+Host 从已验证的交互 Session 或计划 Run 持久事实构造 `PolicyContext`，包含 owner、Agent、Run、subject、targetHost、数据用途 / 保留和当前 / 预计预算；模型与请求 Payload 不能指定这些字段。Policy Engine 根据 request、context 和有效 Grants 生成 Decision，Host 持久化绑定 `decisionId / requestHash / runId / expiry` 的单次 Authorization Record，再构造 `AuthorizedCapabilityCall`；Capability Executor 只接受该对象。同一受信进程内通过回读并原子消费记录防止伪造和重放；跨进程或服务信任边界时再附加并验证 MAC。`ask` 只用于边界扩张和高风险动作；批准后尽量生成有范围和有效期的 PolicyGrant，后续同类动作自动执行。无人值守 Run 不继承交互 Session 的临时权限。
+
+低风险进化生成新 Revision，在历史回放或固定评估通过后可自动激活；权限、预算、数据用途、外部写入和代码发布的扩大始终停止并请求确认。
+
+## 数据、一致性与 Artifact
+
+### 事实源
+
+云端 PostgreSQL 与本地 SQLite 使用同一领域标识和迁移语义，但不要求相同物理 Schema。各自保存：
+
+- User / Agent / Revision / Session；
+- WorkflowRevision / Activation / Run / Step；
+- Capability / Connection / PolicyGrant；
+- Memory / Artifact Metadata / Evaluation / ChangeSet；
+- Checkpoint / Lease / Effect Receipt / Audit Event。
+
+云端所有根记录带 `ownerUserId`，它只能来自验证后的 Session，禁止由请求 Payload 指定。Alpha 只使用关闭查询缓存的 Hyperdrive Binding；认证撤销、Policy、预算、Lease、Checkpoint 和读后写路径不能使用缓存。Hyperdrive 使用 Transaction Pooling，RLS 上下文必须在每个显式事务内通过 `SET LOCAL` 设置，不能依赖连接级 Session 状态。Scheduler / Workflow 使用独立数据库角色，并在服务查询中显式限制 owner。正式团队租户模型后续另行设计。
+
+### Artifact
+
+Artifact 自带 Provenance：来源、时间、哈希、生成步骤、输入引用、派生关系和保留策略。主题情报中的原始帖文、网页和摘要只是 Artifact 的不同角色，不在内核建立专属 Evidence 模块。
+
+数据库与对象存储无法原子提交时，使用 `pending → available`：先在事务中插入 pending 元数据和稳定对象键，再上传到私有 Bucket，校验哈希后在事务中标记 available 并推进 Checkpoint。引用对象不可读时不得提交进度；后台清理超时 pending、对账孤儿对象，并用 Tombstone 记录删除，不新增独立 Artifact 服务。
+
+### 幂等
+
+```text
+activationId + runId + stepId + effectId
+```
+
+物理 Attempt 不改变 `effectId`。通知和外部写入保存 Effect Receipt 与 Provider Receipt；支持 Provider Idempotency Key 或可查询回执时，未知结果可以安全重试。两者都不支持时，发送前将 Effect Receipt 记为 `in_flight`，响应不明则转为 `delivery_unknown`，让当前 Step / Run 失败并停止自动重放；若声明可补偿，只能调用显式补偿 Capability。取消不能撤回已经发生的副作用。
+
+## 信息流 case 的增量采集
+
+该语义属于 `cases/info-flow`，不进入所有 Agent 的通用模型。
+
+优先级：Event / Webhook / Stream → 可靠 Cursor → 自适应轮询 → 固定轮询。
+
+每个 Source 保存：
+
+- `durableCheckpoint` 与当前 Run 的分页 Checkpoint；
+- `lastSuccessAt`、`nextCheckAt`、退避、配额和覆盖健康；
+- 查询窗口、重叠窗口、late-arrival 和删除策略；
+- 单次预算、最大页数与停止条件。
+
+同一 Source 的采集使用租约和递增 fencing token。旧 Run 恢复后不能覆盖新 Checkpoint、释放新租约或删除新状态。Provider 不支持事件或增量时，系统根据新鲜度、价值、配额和历史更新频率调整检查周期，并明确成本与漏报风险。
+
+## 评估与自动进化
 
 ```text
 Observe
-→ Propose minimal diff
-→ Static validation
-→ Historical replay / offline eval
-→ Security and budget checks
-→ Human approval
-→ Canary
-→ Promote or rollback
+→ ChangeSet with minimal diff
+→ Static checks
+→ Replay / Evaluation
+→ Policy and budget checks
+→ Auto activate in grant OR ask once
+→ Monitor
+→ Keep or rollback
 ```
 
-评估分层：
-
-- 确定性：Schema、引用存在、重复、时间窗、预算、禁止动作；
-- 数据集：历史样本上的准确性、覆盖、噪声和版本回归；
-- 模型评估：只用于难以规则化的质量维度，并保留评估模型版本；
-- 人工反馈：有用、噪声、漏报、错误和业务结果；
-- 线上运行：成功率、延迟、费用、退化和 Provider 健康。
-
-OpenTelemetry 是观测协议；Langfuse、Phoenix 等可以作为可选分析界面，但不能成为领域事实源。评估实现优先使用普通测试、固定数据集和可重复回放，不依赖单一 SaaS。
-
-## 安全与多租户边界
-
-- 沙箱决定进程实际上能触达什么；Policy / Approval 决定本次是否允许，二者正交。
-- Secret 由受控 Broker 注入到具体 Worker，不进入 Prompt、Pi Session、数据库正文、日志或 Evidence。
-- Browser、API Connector、MCP 和 Coding Worker 使用不同身份、网络白名单和资源配额。
-- 网页、社交内容、Webhook、Skill、MCP 返回和模型输出一律视为不可信输入。
-- 每次运行只加载版本声明的 Capability；无人值守任务不继承交互会话的临时权限。
-- 数据按 Workspace / Project 隔离；正式身份与行级策略在实现计划中确定，但领域模型从第一天携带 `tenantId`。
-- 第三方平台数据遵循 `../../reference/security-and-data-governance.md`，公开可见不代表允许批量保存或再分发。
-
-## 可观测与审计
-
-统一关联：`tenantId`、`projectId`、`workflowVersionId`、`runId`、`stepId`、`agentTurnId`、`toolCallId`。至少记录：
-
-- 状态迁移、重试、等待、Signal、审批和取消；
-- 模型、Token、Provider 调用、延迟与可归因成本；
-- Capability 版本、输入输出摘要、Evidence 引用和错误类型；
-- Policy 决策、操作者、授权依据、发布和回滚；
-- 数据访问与删除，不记录 Secret 和不必要的个人信息。
-
-Observer / OTel Hook 只观测，不改变业务行为。
-
-## 初始部署拓扑
-
-```text
-Next.js Web / Control API
-Temporal Service（开发环境本地；生产可自托管或使用 Cloud）
-Outbox Dispatcher + Temporal Worker：Workflow Interpreter + Agent Step Activities
-Capability Workers：Connector / Browser / Delivery / Coding
-PostgreSQL
-S3-compatible Object Storage
-Credential Broker + Secret Manager
-OpenTelemetry Collector（可选分析后端）
-```
-
-推荐仓库按职责组织，具体名称在脚手架计划中固化：
-
-```text
-apps/web
-apps/worker
-packages/domain
-packages/workflow-temporal
-packages/agent-pi
-packages/capabilities
-packages/connectors
-packages/ui
-```
-
-这仍是一个可本地启动的模块化系统，不引入 Kubernetes、Service Mesh、Kafka、Redis 或独立搜索集群。只有出现经测量的吞吐、隔离或可用性瓶颈时才增加基础设施。
+Evaluation 首版是 Run / Artifact 上的简单记录，不建设独立评估平台。ChangeSet 首版可以存为新 Revision 的 `targetType + fromRevisionId + toRevisionId + diff + evidence`。只有第二个 case 证明需要后再抽象公共 SDK。
 
 ## 测试基线
 
-- Domain / Schema：版本、状态机、策略、预算和幂等单元测试；
-- Temporal：重放、Timer、Signal、Continue-As-New、取消、Activity 重试、Worker Versioning 和 Worker 重启测试；
-- Pi Adapter：固定模型响应、事件映射、Tool Request 暂停 / 恢复、Tool Policy、压缩和版本升级契约测试；
-- Connector：授权失效、空结果、分页、页内 / 跨轮 checkpoint、page token 失效、late arrival、乱序更新、删除、撤订、限流、恢复和成本测试；同一 Source 还必须覆盖重叠 Run 合并、Lease 超时接管、fencing token / checkpoint CAS 拒绝陈旧提交，以及旧 Run 不得清理新状态；
-- Evidence：原始对象、哈希、pending / available、孤儿清理、引用、派生和删除链路测试；
-- Side effect：稳定 effect ID、Provider 回执、重复投递和补偿测试；
-- Evaluation：固定数据集上的基线与候选版本对比；
-- E2E：自然语言目标到有引用简报、审批、失败恢复和回滚的垂直切片。
+- Kernel：Schema、Revision、Activation、Policy、状态机、预算和幂等；
+- Host Conformance：同一测试验证云端和本地对 Run、Artifact、Capability、Policy 的共同语义；
+- Local：进程停止 / 恢复、设备错过周期、SQLite 事务、恶意 Renderer、IPC sender / Schema、路径与命令逃逸、导航、文件与 Keychain 边界；
+- Cloud：身份 / Session 撤销、关闭缓存的 Hyperdrive、Run 事务派发、Workflows Step 故障注入、调度 backlog、PostgreSQL 与 R2 对账；
+- Pi：事件映射、Tool 暂停 / 恢复、取消、成本和版本升级夹具；
+- External Agent：Codex 版本范围、账号生命周期、认证不复制、命令 / 文件审批、路径 / 网络越界、取消和 degraded CLI 降级；
+- Capability：allow / ask / deny、Authorized Call、防伪造、沙箱、凭据、费用和各 Provider 副作用保证；
+- Info Flow：分页、Cursor 失效、late arrival、删除、租约接管和 Checkpoint CAS；
+- E2E：目标 → RSS / X → 有来源结果 → 定时恢复 → 反馈 → 低风险变更与回滚。
 
 ## Build / Reuse / Buy
 
 | 策略 | 内容 |
 | --- | --- |
-| 自研 | Intent / Research Planner、WorkflowSpec 与 Compiler、Source Strategy、Evidence、Evaluation / Evolution、治理 UI |
-| 候选复用 | Pi、Temporal、PostgreSQL、S3、Playwright、MCP SDK、OpenTelemetry、React / Next.js、Radix；Pi 与 Temporal 先通过 Phase 0 Spike |
-| 接入或购买 | LLM、搜索、授权社交数据、云浏览器、通知和企业 Secret / Identity Provider |
+| 自研 | 共享 Kernel、本地 Run Ledger、Policy、Artifact、Evaluation / ChangeSet、用户体验 |
+| 复用 | Pi、Electron、SQLite、Cloudflare Workers / Workflows / Hyperdrive / R2、React、MCP SDK |
+| 委派 | Codex App Server、可选 Claude Agent SDK、后续 ACP Agent；Claude Companion 属于入站互操作 |
+| 接入或购买 | LLM、搜索、授权社交数据、浏览器、通知和企业身份服务 |
 
-模型和数据 Provider 采用 BYOK / Adapter；LoopEvo 负责计划、调度、归一化、证据、成本和治理，不替用户绕过外部平台授权。
+LoopEvo 不自建社交数据网络，也不通过技术手段绕过 Provider 授权。
 
 ## 重新评估门槛
 
-- **消息系统：** 只有 Postgres Outbox 无法满足已测吞吐、保留或跨地域需求时评估 NATS / Kafka；
-- **缓存：** 只有数据库或 Provider 限流出现可量化热点时引入 Redis；
-- **搜索：** 只有 Postgres FTS / pgvector 无法满足索引规模或延迟目标时引入独立搜索；
-- **多 Agent：** 只有单 Agent 在独立并行任务上稳定受限且收益超过成本时增加 Supervisor；
-- **可视画布：** 只有 Workflow Inspector 无法满足可理解性和编辑需求时增加直接编排；
-- **Temporal 首次确认：** 只有 Phase 0 的恢复、重放、版本和自托管门槛全部通过才进入依赖；失败时用同一负载验证 Trigger.dev 并更新事实源；
-- **上线后替换 Temporal：** 只有产品不再需要持久等待与自托管同语义，或运行证据显示成本不可接受时重新选型。
+- **新包或服务：** 只有第二个实现或已测故障证明需要，才抽象或拆分；
+- **Cloudflare Agents SDK / DO：** 只有真实多端实时连接或单写者协调需求；
+- **Queues：** 只有 Workflows 与数据库无法承担已测扇出或突发；
+- **AI Gateway：** 只有多模型路由、统一配额或观测收益明确；
+- **独立搜索 / Vector：** 只有固定检索评测证明数据库方案不足；
+- **本地模型：** 只有用户需求、模型质量和安装维护成本形成证据；
+- **多 Agent Supervisor：** 只有单 Agent 在可独立并行任务上稳定受限；
+- **完整画布：** 只有渐进式 Inspector 无法满足理解和修改需求。
 
 ## 主要官方来源
 
-- [Pi 仓库](https://github.com/earendil-works/pi)与[官方文档](https://pi.dev/docs/latest)
-- [Temporal Durable Execution](https://docs.temporal.io/temporal)、[TypeScript SDK](https://github.com/temporalio/sdk-typescript)、[Schedules](https://docs.temporal.io/develop/typescript/schedules)、[Signals / Updates](https://docs.temporal.io/develop/typescript/message-passing)
+- [Pi](https://github.com/earendil-works/pi)
+- [Cloudflare Workers](https://developers.cloudflare.com/workers/)、[Workflows](https://developers.cloudflare.com/workflows/)、[Hyperdrive](https://developers.cloudflare.com/hyperdrive/)、[R2](https://developers.cloudflare.com/r2/)
+- [Cloudflare Workflows limits](https://developers.cloudflare.com/workflows/reference/limits/)、[D1 limits](https://developers.cloudflare.com/d1/platform/limits/)
+- [Cloudflare Workers API for Workflows](https://developers.cloudflare.com/workflows/build/workers-api/)、[Hyperdrive query caching](https://developers.cloudflare.com/hyperdrive/concepts/query-caching/)、[connection pooling](https://developers.cloudflare.com/hyperdrive/concepts/connection-pooling/)
+- [Cloudflare Browser Run](https://developers.cloudflare.com/browser-run/)、[Sandbox SDK](https://developers.cloudflare.com/sandbox/)、[Containers](https://developers.cloudflare.com/containers/)
+- [Codex App Server](https://learn.chatgpt.com/docs/app-server)、[Authentication](https://learn.chatgpt.com/docs/auth)、[Non-interactive mode](https://learn.chatgpt.com/docs/non-interactive-mode)
+- [Claude Agent SDK](https://code.claude.com/docs/en/agent-sdk/overview)、[Claude Code headless mode](https://code.claude.com/docs/en/headless)
+- [Agent Client Protocol](https://agentclientprotocol.com/overview/introduction)
+- [Electron Security](https://www.electronjs.org/docs/latest/tutorial/security)
+- [PostgreSQL](https://www.postgresql.org/docs/)、[SQLite WAL](https://www.sqlite.org/wal.html)
 - [MCP TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk)
-- [Playwright](https://github.com/microsoft/playwright)
-- [OpenTelemetry JavaScript](https://github.com/open-telemetry/opentelemetry-js)
-- [PostgreSQL](https://www.postgresql.org/docs/)与[Amazon S3 API](https://docs.aws.amazon.com/AmazonS3/latest/API/Welcome.html)
